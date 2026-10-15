@@ -110,7 +110,7 @@ Use the latest supported Java 25 security patch. Spring Boot 4.1.1 requires at l
 | `field_versions` | Map field name to integer | Version at which each mutable field last changed; used for field-level conflict detection. |
 | `created_at`, `updated_at` | Timestamp | UTC instants. |
 
-These selected limits are enforced in both client and API. Progress notes are capped at 2,000 characters. The proposed five-level green thresholds and accessible card treatment are documented in [UI-Flow-and-Wireframe.md](UI-Flow-and-Wireframe.md); implement them consistently after wireframe review.
+These selected limits are enforced in both client and API. Progress notes are capped at 2,000 characters. The selected five-level green thresholds and accessible card treatment are documented in [UI-Flow-and-Wireframe.md](UI-Flow-and-Wireframe.md); implement them consistently.
 
 ### 4.2 Derived task categories
 
@@ -734,3 +734,4 @@ At scaffold, select latest stable compatible Flutter package releases (no prerel
 | 0.2 | 15 October 2026 | Selected stack and implementation defaults using the user's delegation; aligned domain limits, persistence, auth, retry, reminder, and operational choices. |
 | 0.3 | 15 October 2026 | Switched backend implementation from NestJS/TypeScript to Java 25 LTS and Spring Boot at the user's direction. |
 | 0.4 | 16 October 2026 | Set OS/package policy and privacy/retention defaults; added Apple identity support, account deletion web path, and store submission decisions. |
+| 0.5 | 16 October 2026 | Confirmed UI effort thresholds as selected design rules for implementation. |

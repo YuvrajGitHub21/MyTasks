@@ -1,7 +1,19 @@
-﻿# Backend — Java
+# Frontend — Flutter
 
-The hosted backend will use Java 25 LTS and Spring Boot as a modular monolith, with API and worker entry points as described in [`../Documentation/HLD.md`](../Documentation/HLD.md) and [`../Documentation/LLD.md`](../Documentation/LLD.md).
+The Android and iOS client is scaffolded here with Flutter 3.47.7 stable and Dart 3.13.5. The current app is an empty starter shell; feature work follows the approved [UI flow](../Documentation/UI-Flow-and-Wireframe.md) and [first implementation slice](../Documentation/Implementation-Roadmap.md).
 
-## Planned setup
+## Local setup on the current Windows machine
 
-M1 will add the Maven Wrapper, pinned dependency configuration, API health endpoint, local development profile, and migration baseline. Backend product endpoints are sequenced after the local-first guest task experience; do not add cloud credentials to this folder or commit them.
+The SDKs are installed under `%USERPROFILE%\develop\MyTasksToolchains`.
+
+```powershell
+$env:FLUTTER_ROOT = Join-Path $env:USERPROFILE 'develop\MyTasksToolchains\flutter'
+$env:JAVA_HOME = Join-Path $env:USERPROFILE 'develop\MyTasksToolchains\jdk-25.0.4.1+1'
+& "$env:FLUTTER_ROOT\bin\flutter.bat" pub get
+& "$env:FLUTTER_ROOT\bin\flutter.bat" analyze
+& "$env:FLUTTER_ROOT\bin\flutter.bat" run
+```
+
+`pubspec.lock` is committed to pin resolved app dependencies. Android uses API 24 as its minimum; the iOS deployment target is 15.0. The iOS project is generated, but building it requires macOS and Xcode. The current application ID is `com.yuvrajpadhy.mytasks`; verify its availability before the first public store submission.
+
+The package design and folder responsibilities are described in [`../Documentation/LLD.md`](../Documentation/LLD.md).

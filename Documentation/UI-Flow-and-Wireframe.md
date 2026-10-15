@@ -271,6 +271,43 @@ When OS permission is denied, explain how to enable it in system settings and ke
 
 Include: current profile type (Guest / signed-in provider), sync state, **Connect account** for guests, **Sync now**, notification settings, privacy policy, app licenses, and **Delete account** for signed-in accounts. Account deletion requires re-authentication and displays the 7-day primary-data and 30-day backup windows before final confirmation.
 
+### 4.9 Shared loading, empty, and error states
+
+| Situation | UI behavior |
+|---|---|
+| First local load | Show a brief placeholder while reading the device store. Keep navigation responsive. |
+| Refresh or completed-history page load | Keep existing content visible and show a small progress indicator; do not replace the whole screen with a spinner. |
+| Empty Today | Say **No tasks for today** and offer **Add a task**. |
+| Empty Later | Say **No scheduled tasks** and offer **Schedule a task**. |
+| Empty Completed | Say **No completed tasks yet** and explain that completed tasks will appear here. |
+| Local save succeeds | Save before leaving the form, show a brief confirmation, and place the task in the derived list. Offline state does not block local task actions. |
+| Local save fails | Keep the form and entered values, explain that the task could not be saved, and offer retry. Never show a success state until durable local save succeeds. |
+| Signed-in sync pending/fails | Keep local changes available; show pending or retry status without blocking task use. Do not show raw server or exception text. |
+| Sync conflict | Show the field and both values, let the user choose, and explain when a choice is saved. Preserve unrelated fields. |
+| Notification permission denied/unavailable | Explain that reminders need system permission and link to system settings where possible. Keep all task features available. |
+| Destructive action | Confirm task deletion (including its history) and account deletion separately; provide a clear cancel action and state the consequence before confirmation. |
+
+### 4.10 Form validation and save behavior
+
+Validate on save and associate each error with its field. Preserve all entered values and focus the first invalid field. Use these plain-language messages:
+
+| Field/rule | Message |
+|---|---|
+| Topic is blank after trimming | **Enter a topic.** |
+| Topic exceeds 200 characters | **Topic must be 200 characters or fewer.** |
+| Subtopic exceeds 200 characters | **Subtopic must be 200 characters or fewer.** |
+| Description exceeds 5,000 characters | **Description must be 5,000 characters or fewer.** |
+| Start or planned end date missing | **Choose a start date and an end date.** |
+| Planned end date is before start date | **End date must be on or after the start date.** |
+| Maximum end date is before planned end date | **Maximum end date must be on or after the end date.** |
+| Effort is blank, not numeric, zero, negative, or above the supported maximum | **Enter an effort greater than 0 and no more than 99,999.99 hours.** |
+| Effort has more than two decimal places | **Enter up to two decimal places.** |
+| Percent progress is outside 0–100 | **Enter a percentage from 0 to 100.** A 100% log remains a partial log; full completion is a separate action. |
+| Units progress is invalid | **Enter positive completed and total units. Completed units cannot exceed total units.** |
+| Note progress is blank or exceeds 2,000 characters | **Enter a progress note of up to 2,000 characters.** |
+
+Task and progress edits are saved locally first. For signed-in users, show sync status separately; a remote failure must not discard a valid local save. Use India Standard Time for task dates and reminder dates in this release. The same reminder event must not be scheduled twice for a user/device/date.
+
 ## 5. Effort-based green treatment
 
 Use a deterministic five-level scale based only on estimated hours. Apply the green level to a slim card accent and a labeled effort chip; keep the main task text on a neutral card background for readability.
@@ -314,5 +351,12 @@ Overdue styling takes precedence over the green accent: use a red accent, an exp
 - Are progress method choices understandable and mutually exclusive?
 - Is guest-vs-account data behavior clear before a user chooses sign-in or transfer?
 - Are reminders, sign-in, and deletion transparent about OS or retention constraints?
+
+## 9. Revision history
+
+| Version | Date | Change |
+|---|---|---|
+| 0.1 | 16 October 2026 | First-pass MVP flows and wireframes; clickable preview approved as the visual baseline. |
+| 0.2 | 16 October 2026 | Added shared loading/empty/error behavior and field-level validation; recorded the selected effort scale and accessibility cues for implementation. |
 
 

@@ -1,8 +1,10 @@
 ﻿# Phase-wise Implementation Plan
 
 **Project:** MyTasks mobile application  
-**Status:** Proposed execution plan for review  
-**Date:** 16 October 2026  
+**Status:** Execution plan approved by project owner; M0 complete, M1 in progress
+
+**Date:** 16 October 2026
+
 **Related:** [Implementation Roadmap](Implementation-Roadmap.md), [FRS](FRS.md), [HLD](HLD.md), [LLD](LLD.md), [UI flow and preview](UI-Flow-and-Wireframe.md)
 
 ## How we will work
@@ -48,6 +50,15 @@ Review the above against the FRS and UI prototype. Resolve contradictions in the
 
 **Exit gate:** every MVP journey has a reviewed flow, visible field rules and validation are defined, effort/overdue visuals are accessible, and unresolved decisions are recorded.
 
+**M0 completion record — 16 October 2026:** The project owner approved the current preview as the visual baseline and approved all four execution decisions below. The wireframe now defines shared loading/empty/error behavior and field validation messages; effort thresholds and accessible labels are selected; notification scheduling is consistently defined in IST. Calendar and study timer remain deferred. The UI preview remains a design reference; accessibility contrast and device behavior will be verified during implementation on supported platforms.
+
+| M0 phase | Result |
+|---|---|
+| M0.1 Baseline approved direction | Complete — preview approval recorded. |
+| M0.2 MVP user journeys | Complete — required first-release flows and common state behavior are described in the UI document. |
+| M0.3 Visible rules/accessibility | Complete — field limits, validation messages, effort scale, overdue treatment, and non-color cues are recorded. |
+| M0.4 Exit review | Complete — IST reminder wording aligned across requirements; later features remain explicitly deferred. |
+
 ## M1 — Repository and engineering foundation
 
 ### M1.1 — Establish project structure and build conventions
@@ -89,13 +100,22 @@ Use a clean checkout to follow the written setup instructions. Review dependency
 
 **Exit gate:** reproducible local Android/iOS and Java builds, documented commands, safe configuration patterns, API health endpoint, and working initial migration. Cloud resources are an explicit follow-on if local setup is complete first.
 
+### M1 progress record — 16 October 2026
+
+- M1.1: top-level `Documentation/`, `frontend/`, and `backend/` layout and root ignore rules are in place.
+- M1.2: Java 25.0.4.1, Maven Wrapper 3.10.0, and Spring Boot 4.1.1 API/worker entry points are installed/configured. The backend compile-only build succeeds with tests skipped.
+- M1.3: local PostgreSQL 18.6 Compose configuration, environment-variable database settings, Actuator health endpoints, and Flyway schema baseline are in place.
+- M1.2: Flutter 3.47.7 / Dart 3.13.5 is installed; the Android/iOS scaffolds and `pubspec.lock` are in place. Flutter static analysis reports no issues, and an Android debug APK builds successfully. The first build installed the required Android NDK 28.2.13676358.
+- M1.3: PostgreSQL 18.6 Compose configuration, environment-variable database settings, Actuator health endpoints, and Flyway schema baseline are in place. `docker compose config --quiet` succeeds. The Docker CLI is installed, but the Docker Desktop engine is not running, so the database migration could not yet be exercised against a running local database.
+- Remaining before M1 exit: start the local Docker engine and exercise the PostgreSQL migration, verify setup from the documented commands, and perform iOS build verification on macOS/Xcode. Windows cannot produce an iOS build. No automated tests have been added or run.
+
 ## After M1 — First product increment
 
 Follow the roadmap’s first implementation slice in `frontend/`: launch as guest, create a task, see it in the correct list with effort-based shading, record partial progress, complete it, and verify local persistence after restart. Keep the backend scaffold available, but avoid making basic task use depend on network or accounts. Add backend APIs and account sync after the local model and behavior are stable.
 
-## Review points for the project owner
+## Approved execution decisions
 
-Please review these execution choices before implementation begins:
+The project owner approved all four choices on 16 October 2026:
 
 1. The approved HTML is a design reference; production UI is rebuilt in Flutter.
 2. M0 includes finishing edge states/accessibility rules for flows beyond the basic preview.

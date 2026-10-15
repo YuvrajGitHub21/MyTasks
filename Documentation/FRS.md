@@ -142,7 +142,7 @@ Priority labels: **Must** = required for the first usable release; **Should** = 
 | NOTIF-003 | Must | The user can enable/disable reminders and configure supported reminder times. The app explains when notifications are unavailable or permission is denied. |
 | NOTIF-004 | Must | When there are no active tasks today, the app reminds the user to assign today's work at 9:00 AM and 12:00 PM (noon), in India Standard Time. The user delegated the choice; noon follows their explicit “1200 in 24 hr clock” response. |
 | NOTIF-005 | Must | At a configurable end-of-day time, default 10:00 PM, the app prompts the user to log today's work if there is active incomplete work with no progress log dated today. One log for a task today is sufficient to suppress the reminder for that task. |
-| NOTIF-006 | Must | Reminder scheduling respects the user's local date/time zone and daylight-saving changes where applicable, and avoids duplicate reminders for the same scheduled event. |
+| NOTIF-006 | Must | Reminder scheduling uses the initial-release India Standard Time date/time rules and avoids duplicate reminders for the same user, device, reminder type, and date. Support for travel and other time zones is deferred. |
 | NOTIF-007 | Must | On Android, the app may offer an ongoing notification while an appropriate foreground service is actively running, subject to OS rules and user controls; it is not a permanent guarantee. On iOS, use supported notification/live activity behavior; the app cannot guarantee a permanently visible, non-dismissible task notification. |
 | NOTIF-008 | Must | If the user denies notification permission, core task functionality remains available and the app provides a route to notification settings. |
 | NOTIF-009 | Must | Lock-screen daily summary uses a privacy-safe count, e.g. “You have 3 tasks today,” without task names. |
@@ -256,3 +256,4 @@ This is a conceptual starting point. It does not prescribe database tables or a 
 | 0.3 | 13 October 2026 | Incorporated answers on upper-bound date, fixed overdue date, selected progress method, India time-zone scope, guest migration, sync conflict resolution, account/task deletion, completed history, and export timing. |
 | 0.4 | 13 October 2026 | Set no-task reminders to 9 AM and noon, captured the end-of-day log suppression rule, and selected fixed effort-to-color thresholds. Calendar remains deferred. |
 | 0.5 | 16 October 2026 | Selected Android/iOS minimum versions, privacy-minimizing MVP defaults and retention windows; added iOS Sign in with Apple, in-app/web account deletion, and clarified task-history retention. |
+| 0.6 | 16 October 2026 | Aligned reminder scheduling with the selected IST-only MVP behavior; other time zones are deferred. |

@@ -1,7 +1,23 @@
-﻿# Backend — Java
+# Backend — Java / Spring Boot
 
-The hosted backend will use Java 25 LTS and Spring Boot as a modular monolith, with API and worker entry points as described in [`../Documentation/HLD.md`](../Documentation/HLD.md) and [`../Documentation/LLD.md`](../Documentation/LLD.md).
+This folder contains the Java 25 LTS Spring Boot modular monolith. The API and worker have separate process entry points and will share domain services as later milestones add behavior.
 
-## Planned setup
+## Local development
 
-M1 will add the Maven Wrapper, pinned dependency configuration, API health endpoint, local development profile, and migration baseline. Backend product endpoints are sequenced after the local-first guest task experience; do not add cloud credentials here or commit them.
+Prerequisites: Java 25 and Docker Desktop.
+
+1. Start PostgreSQL: `docker compose up -d database`
+2. Run the API: `./mvnw spring-boot:run` (Windows: `mvnw.cmd spring-boot:run`)
+3. Check health at `http://localhost:8080/actuator/health`.
+4. The worker entry point is `com.mytasks.worker.MyTasksWorkerApplication`; scheduled jobs are added in later milestones.
+
+The local database defaults are development-only and bind to localhost. Copy `.env.example` to `.env` only if you need to override Docker Compose values. Never reuse these defaults outside local development.
+
+## Layout
+
+- `src/main/java/com/mytasks/api` — HTTP application entry point.
+- `src/main/java/com/mytasks/worker` — non-web worker entry point.
+- `src/main/resources/db/migration` — Flyway migrations. `V1` creates the application schema; domain tables are introduced in their feature milestone.
+- `compose.yaml` — local PostgreSQL service.
+
+The initial project uses Spring Boot 4.1.1, the Maven Wrapper, JDBC, Flyway, PostgreSQL, validation, and Actuator. API modules and worker behavior follow the [LLD](../Documentation/LLD.md).
