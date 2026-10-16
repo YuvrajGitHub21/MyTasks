@@ -81,6 +81,8 @@ M1 does not implement task creation, account sign-in, cloud hosting, or producti
 
 **Expected result:** The setup instructions work from a clean checkout using the documented toolchains. The debug APK is a local build artifact, not a source file to commit.
 
+**Walkthrough record — 16 October 2026:** Java 25.0.4.1 compiled the backend successfully; Flutter 3.47.7 analysis reported no issues; and the Android debug APK built successfully after setting `JAVA_HOME` to the Java 25 installation. PostgreSQL reported healthy. The API health endpoint returned `UP`, Swagger UI returned HTTP 200, and `/v3/api-docs` reported MyTasks API v1. Starting a second API process failed because port 8080 was already occupied by the responding API, so the existing process was left untouched. The README now explains setting `JAVA_HOME` in PowerShell. Repeat the API start step after identifying/stopping the existing process to finish the clean walkthrough.
+
 ### M1-D — Add continuous integration
 
 **Goal:** Have GitHub automatically repeat the core checks when code changes.
@@ -95,6 +97,8 @@ M1 does not implement task creation, account sign-in, cloud hosting, or producti
 **What you will learn:** CI is a clean, automated machine that performs the same quality checks after a change. It reduces “works on my machine” problems. An iOS job needs a macOS runner because Xcode provides Apple's compiler, simulator, and signing tools.
 
 **Expected result:** GitHub can verify Android and Java scaffolds without relying on files or SDK caches from this workstation.
+
+**Configuration record — 16 October 2026:** `.github/workflows/ci.yml` now defines separate Flutter and backend jobs for pushes to `M1`/`master` and pull requests targeting `master`. It pins Flutter to 3.47.7 and Java to 25, uses read-only repository permissions, checks the committed Flutter lockfile, analyzes Dart, builds a debug APK, and compiles the backend. The workflow has not run on GitHub yet; it will run after the workflow is pushed. No automated tests are included because the project owner asked not to add or run tests without asking.
 
 ### M1-E — Review and close M1
 
