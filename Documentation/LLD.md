@@ -2,7 +2,7 @@
 
 **Project:** Personal and public task planning mobile application  
 **Document status:** Implementation baseline selected  
-**Version:** 0.4  
+**Version:** 0.5
 **Date:** 16 October 2026  
 **Parent documents:** [FRS.md](FRS.md) v0.5 and reviewed [HLD.md](HLD.md) v0.4
 
@@ -74,7 +74,7 @@ Deploy API and worker as separate processes from the same modular codebase initi
 |---|---|---|
 | Mobile SDK | Flutter stable channel; pin the stable SDK in CI and commit dependency lockfiles | Supports both requested app platforms with one product codebase. Use current stable releases at scaffold time rather than pinning an obsolete SDK in this document. |
 | State and dependency wiring | `flutter_riverpod` | Separates UI state from repository/domain services and handles async loading/error states. |
-| Local persistence | Drift + SQLite, using the SQLCipher native build supplied through `sqlite3` 3.x | Typed relational queries, transactions, migrations, and local data encryption. SQLCipher Community Edition requires notices in a user-accessible app location. [Drift](https://pub.dev/packages/drift), [sqlite3 encryption options](https://pub.dev/packages/sqlite3), [SQLCipher Community license](https://www.zetetic.net/sqlcipher/community/) |
+| Local persistence | Drift + SQLite3MultipleCiphers through `sqlite3` 3.x build hooks | Typed relational queries, transactions, migrations, and encrypted local storage. Drift currently recommends SQLite3MultipleCiphers for new encrypted databases; its default `sqleet` cipher is ChaCha20-Poly1305. Include the SQLite3MultipleCiphers MIT notice in the app license notices. [Drift encryption guide](https://drift.simonbinder.eu/platforms/encryption/), [sqlite3 build hooks](https://pub.dev/documentation/sqlite3/latest/topics/hook-topic.html), [SQLite3MultipleCiphers license](https://github.com/utelle/SQLite3MultipleCiphers/blob/main/LICENSE) |
 | Networking | `dio` | Centralized timeouts/interceptors and cancellation for authenticated REST calls. |
 | Authentication | `google_sign_in` plus `sign_in_with_apple` | Native Google flow on Android/iOS and Apple flow on iOS; backend verifies both provider tokens. Apple's App Review rules require an equivalent option when a third-party provider is used for primary sign-in. [Apple guideline 4.8](https://developer.apple.com/app-store/review/guidelines/) |
 | Secret storage | `flutter_secure_storage` | Store account tokens and the local database key through platform secure storage. |
@@ -664,7 +664,7 @@ Never merge identities based only on matching email addresses. Adding another pr
 - Reconcile schedules after task create/update/delete, progress create/update/delete, completion/reopen, reminder preference changes, and day rollover.
 - On Android, use normal scheduled notifications for reminders. An ongoing task-list notification is a separate platform-specific feature and only while a valid foreground operation justifies it; do not make the core list depend on it.
 - On iOS, use standard local/push notifications and app badges where supported; do not promise a permanently visible notification.
-- Store the local database in app-private storage encrypted with SQLCipher. Generate a random database key and keep it in platform secure storage, separate from the database. Exclude database/key material from OS cloud backup; signed-in data can be resynced and guest data remains intentionally device-local. Protect access and refresh tokens in platform secure storage.
+- Store the local database in app-private storage encrypted with SQLite3MultipleCiphers using its default `sqleet` ChaCha20-Poly1305 cipher. Generate a cryptographically random database key and keep it in platform secure storage, separate from the database. Verify that the cipher build is active before opening user data. Exclude database/key material from OS cloud backup; signed-in data can be resynced and guest data remains intentionally device-local. Protect access and refresh tokens in platform secure storage. SQLite3MultipleCiphers is MIT-licensed and its notice must be included in app license notices.
 - On sign-out, retain or clear account cache according to a user-visible policy; never surface it in guest mode. Recommended default: retain encrypted local cache for re-login on the same device, but lock access behind account identity and clear on account deletion.
 
 ## 11. Validation and invariants
@@ -706,7 +706,7 @@ The stack and defaults in this document are the implementation baseline. The fol
 | Effort | Greater than zero through 99,999.99 hours, two decimal places. |
 | API bounds | List page defaults to 50 rows and caps at 100; sync mutation batches cap at 100; request body cap is 1 MiB. |
 | Authentication | Access token expires after 15 minutes. Rotating refresh token expires after 30 days of inactivity; server stores only a secure hash and revokes previous token on rotation. |
-| Database key | Random per-install SQLCipher key in platform secure storage; local database excluded from OS backup. |
+| Database key | Random per-install SQLite3MultipleCiphers key in platform secure storage; local database excluded from OS backup. |
 | Quiet hours | Defer to a permitted time on the same local date, otherwise suppress. |
 | Transient retries | Exponential backoff with jitter, capped at 5 minutes, up to 10 attempts or 24 hours of job age; drop expired reminder jobs. |
 | Cloud SQL availability | Zonal for development; regional high availability for public production once launch SLO and budget are approved. |
@@ -718,6 +718,8 @@ The stack and defaults in this document are the implementation baseline. The fol
 At scaffold, select latest stable compatible Flutter package releases (no prereleases), verify support for Android API 24/iOS 15 and required provider flows, and commit exact versions in `pubspec.lock`; update on a planned cadence. Remaining engineering inputs are measured DAU/peak load, availability/latency and RPO/RTO targets, sync history/inactive-device retention, and production cost budget. Privacy-policy text, retention disclosures, and final compliance with India's phased DPDP Act/Rules and app-store policies remain a pre-public-launch review gate; this design does not claim legal compliance. [MeitY DPDP Rules Gazette](https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf)
 
 ## 14. Source notes
+
+- Drift recommends SQLite3MultipleCiphers for new encrypted databases; the `sqlite3` 3.x build hook enables its native cipher library. The separate `sqlcipher_flutter_libs` package is obsolete for this setup. [Drift encryption guide](https://drift.simonbinder.eu/platforms/encryption/), [package notice](https://pub.dev/packages/sqlcipher_flutter_libs).
 
 - Flutter's architecture guidance supports UI/data separation and repository boundaries: [Flutter architecture recommendations](https://docs.flutter.dev/app-architecture/recommendations).
 - Google recommends sending the ID token over HTTPS and verifying its integrity on the backend: [Google sign-in backend authentication](https://developers.google.com/identity/sign-in/ios/backend-auth).

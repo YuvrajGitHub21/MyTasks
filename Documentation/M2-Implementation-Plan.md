@@ -1,4 +1,4 @@
-﻿# M2 — Detailed Implementation Plan
+# M2 — Detailed Implementation Plan
 
 **Project:** MyTasks mobile application  
 **Purpose:** Build the first useful guest experience as a local-first Flutter app.  
@@ -20,8 +20,8 @@ The M2 boundary is the local guest experience. It does not add sign-in, a task A
 | App bootstrap | Complete | `ProviderScope` is the Riverpod root. |
 | App shell and navigation | First pass complete | Material 3 theme and Today/Later/Completed navigation with empty states are implemented. |
 | Guest profile | Not started | A stable local profile boundary is needed even before accounts exist. |
-| Task domain model and validation | Not started | Must match the field limits and date/progress rules in the LLD. |
-| Encrypted local persistence | Not started | Drift/SQLite with SQLCipher and a key protected by platform secure storage is the design baseline; verify package/platform setup before wiring UI. |
+| Task domain model and validation | Implemented | `Task`, `ProgressEntry`, `LifecycleEvent`, `TaskDate`, and reusable rules match the LLD; Flutter analysis passed on 16 October 2026. |
+| Encrypted local persistence | Package setup in progress | Drift/SQLite3MultipleCiphers and secure-storage dependencies/build hook are selected; schema, key lifecycle, and repository remain to implement. |
 | Task lists and task journeys | Not started | Create, view, edit, delete, progress, complete, reopen, and list behavior remain. |
 | Automated tests | Not part of the current work agreement | Do not add or run tests unless the owner asks. Use the agreed analysis/build/manual checks and explain any verification limitation. |
 
@@ -102,16 +102,16 @@ Work is split into small code batches. Before each batch, explain the files and 
 
 **Planned work:**
 
-1. Confirm the selected Drift, SQLite/SQLCipher, and secure-storage package versions against the current Flutter/Dart toolchain and Android target. Resolve any required native build hooks deliberately.
+1. Use the selected compatible stable packages: Drift 2.35.2, drift_flutter 0.3.1, sqlite3 3.7.1, flutter_secure_storage 11.2.0, path 1.9.1, path_provider 2.1.6, drift_dev 2.35.1, and build_runner 2.16.2. `pubspec.lock` pins the resolved versions. The `sqlite3` build hook selects SQLite3MultipleCiphers (`source: sqlite3mc`); its default cipher is sqleet ChaCha20-Poly1305. The project includes its MIT license notice in the future app license screen.
 2. Define versioned local tables for profile, task, progress entries, and lifecycle events. Preserve original planned dates and event timestamps.
 3. Generate Drift code as a documented build step, and add an initial local schema migration.
-4. Generate or retrieve the database encryption key through platform secure storage; do not hard-code or log it. Decide and document the guest data behavior if the key is missing or secure storage is reset. Never silently replace a key and pretend an unreadable database is empty.
+4. Generate a cryptographically random database encryption key and retrieve it through platform secure storage; do not hard-code or log it. If the key is missing or secure storage was reset, fail closed and explain that the local database cannot be opened; never silently replace the key and present unreadable guest data as an empty database.
 5. Add repository methods for task and history operations. Save a task mutation and its related lifecycle/history changes in a database transaction where they must be atomic.
 6. Scope reads and writes by local profile ID in the repository.
 
 **What you learn:** Drift maps typed Dart code to SQLite tables and queries. A database migration changes a user's local schema safely as the app evolves. Encryption protects the database file at rest; secure storage protects the key. A repository hides the storage mechanism from UI code, which makes future remote sync easier to add.
 
-**Review checkpoint:** Confirm a record survives app restart, profile scoping is explicit, the encrypted database opens on the supported Android development target, and schema upgrade behavior is understood before task UI depends on it. iOS native verification requires macOS/Xcode and remains a separate platform check.
+**Review checkpoint:** Confirm the SQLite3MultipleCiphers `cipher` pragma is available before opening the database, a record survives app restart, profile scoping is explicit, encrypted storage opens on the supported Android target, and schema upgrade behavior is understood before task UI depends on it. Missing encryption support or key material must fail closed. iOS native verification requires macOS/Xcode and remains a separate platform check.
 
 ### M2-D — Task create/read/update/delete journey
 
@@ -234,7 +234,7 @@ The local task IDs, profile boundary, progress/lifecycle history, original plann
 | Domain model | Dart types and rules that describe tasks independently of UI and storage. |
 | Repository | An interface/layer the rest of the app uses to read and change data without depending directly on SQL. |
 | Drift | A Dart library that generates typed database access code for SQLite. |
-| SQLCipher | An SQLite-compatible encryption layer that encrypts the database file at rest. |
+| SQLite3MultipleCiphers | An SQLite-compatible encryption extension; the selected default cipher is sqleet ChaCha20-Poly1305. |
 | Migration | A versioned change to local database structure that preserves/updates existing user data. |
 | Provider | A Riverpod-managed value or operation that UI can observe and use. |
 | Event history | Dated records such as progress, completion, and reopening, retained alongside the current task state. |

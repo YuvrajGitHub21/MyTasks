@@ -64,7 +64,7 @@ Study timer, calendar view, data export, collaboration, recurring tasks, and adv
 - Create local, development, staging, and production configuration patterns. Keep credentials out of source control.
 - Add formatting/static analysis conventions, environment configuration, structured error handling, and a versioned API contract baseline.
 - Provision development Google Cloud resources using infrastructure-as-code, including Cloud Run, Cloud SQL PostgreSQL, Cloud Tasks, Secret Manager, and logging/monitoring.
-- Record SQLCipher Community notices and third-party license handling for an in-app licenses screen.
+- Record SQLite3MultipleCiphers MIT notices and third-party license handling for an in-app licenses screen.
 
 **Exit criteria:** A clean checkout can build the mobile app and backend using documented commands; development deployments run with non-production credentials; API health checks, database connectivity, secret loading, and schema migration are observable.
 
@@ -206,4 +206,3 @@ Production planning inputs and external review gates:
 - DAU, peak concurrent requests, push opt-in rates, expected task/progress history volume, availability/latency and RPO/RTO targets, queue backlog target, support response target, cloud budget, and disaster-recovery expectations.
 - Qualified review of current India privacy-law commencement/applicability and final privacy, processor, and retention disclosures before public launch. India's DPDP Rules have phased commencement; engineering defaults do not determine legal compliance.
 - Re-check store policies, required SDK levels, and package maintenance status before each public release.
-
