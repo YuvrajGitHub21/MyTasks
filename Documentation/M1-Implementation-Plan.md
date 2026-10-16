@@ -1,7 +1,7 @@
 # M1 — Detailed Implementation Plan
 
 **Purpose:** Finish and understand the project foundation before building task features.  
-**Status:** In progress. The code is pushed; local database startup, API contract baseline, clean-setup walkthrough, and CI remain.  
+**Status:** Complete — 16 October 2026. The local database and API baseline were verified, Flutter and Java build checks passed, and both GitHub CI jobs passed on `M1`. iOS native verification remains a documented Mac/Xcode follow-up.  
 **Owner:** Project owner and assistant, working in reviewable batches of at most five edited files.
 
 ## 1. What M1 delivers
@@ -23,7 +23,7 @@ M1 does not implement task creation, account sign-in, cloud hosting, or producti
 | Compose file validation | Complete | `docker compose config --quiet` succeeded. |
 | PostgreSQL container and Flyway startup | Complete | Docker Desktop 29.4.1; PostgreSQL 18.6 reported healthy; API health returned `UP`; Flyway history records V1 as successful and schema `app` exists. |
 | API contract/error baseline | Foundation complete | Springdoc 3.1.1 exposes `/v3/api-docs` with MyTasks title and `v1` metadata; `X-Request-ID` is returned. Error envelope and handlers compile. The spec has no business paths yet, and error handling awaits a business endpoint for runtime verification. |
-| Clean setup instructions and CI | Pending | Walk through documented commands; add CI now that the GitHub repository exists. |
+| Clean setup instructions and CI | Complete | Backend compile, Flutter analysis, and Android debug build passed locally. GitHub CI run 38889527485 passed both jobs on `M1`. |
 | iOS native build | Mac/Xcode required | The project files exist. Build on a Mac or a macOS CI runner when available. |
 
 ## 3. Work sequence
@@ -81,7 +81,7 @@ M1 does not implement task creation, account sign-in, cloud hosting, or producti
 
 **Expected result:** The setup instructions work from a clean checkout using the documented toolchains. The debug APK is a local build artifact, not a source file to commit.
 
-**Walkthrough record — 16 October 2026:** Java 25.0.4.1 compiled the backend successfully; Flutter 3.47.7 analysis reported no issues; and the Android debug APK built successfully after setting `JAVA_HOME` to the Java 25 installation. PostgreSQL reported healthy. The API health endpoint returned `UP`, Swagger UI returned HTTP 200, and `/v3/api-docs` reported MyTasks API v1. Starting a second API process failed because port 8080 was already occupied by the responding API, so the existing process was left untouched. The README now explains setting `JAVA_HOME` in PowerShell. Repeat the API start step after identifying/stopping the existing process to finish the clean walkthrough.
+**Walkthrough record — 16 October 2026:** Java 25.0.4.1 compiled the backend successfully; Flutter 3.47.7 analysis reported no issues; and the Android debug APK built successfully after setting `JAVA_HOME` to the Java 25 installation. PostgreSQL reported healthy. The API health endpoint returned `UP`, Swagger UI returned HTTP 200, and `/v3/api-docs` reported MyTasks API v1. Port 8080 was already serving `MyTasksApiApplication`, so the running process was left untouched. The README documents setting `JAVA_HOME` in PowerShell and the Linux/macOS Bash wrapper command.
 
 ### M1-D — Add continuous integration
 
@@ -98,11 +98,13 @@ M1 does not implement task creation, account sign-in, cloud hosting, or producti
 
 **Expected result:** GitHub can verify Android and Java scaffolds without relying on files or SDK caches from this workstation.
 
-**Configuration record — 16 October 2026:** `.github/workflows/ci.yml` now defines separate Flutter and backend jobs for pushes to `M1`/`master` and pull requests targeting `master`. It pins Flutter to 3.47.7 and Java to 25, uses read-only repository permissions, checks the committed Flutter lockfile, analyzes Dart, builds a debug APK, and compiles the backend. The workflow has not run on GitHub yet; it will run after the workflow is pushed. No automated tests are included because the project owner asked not to add or run tests without asking.
+**Completion record — 16 October 2026:** `.github/workflows/ci.yml` defines separate Flutter and backend jobs for pushes to `M1`/`master` and pull requests targeting `master`. Both jobs passed in [GitHub Actions run 38889527485](https://github.com/YuvrajGitHub21/MyTasks/actions/runs/38889527485) after the Maven wrapper was invoked through Bash because Git records it without the executable bit. No automated tests were added or run.
 
 ### M1-E — Review and close M1
 
 Review the checklist and confirm each item has evidence. Update the implementation plan and READMEs with the actual result. Keep unresolved platform-specific work explicit: iOS native verification remains open until a Mac/Xcode environment is available.
+
+**Status: Complete — 16 October 2026.** The backend compiles and starts against local PostgreSQL; Flyway V1 succeeded; health and Swagger UI respond; Flutter analysis and Android debug build pass; and both GitHub CI jobs passed. The iOS Mac/Xcode requirement is documented as a platform follow-up. No automated tests were added or run.
 
 **M1 exit criteria:**
 
