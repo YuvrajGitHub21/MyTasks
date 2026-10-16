@@ -1,0 +1,241 @@
+﻿# M2 — Detailed Implementation Plan
+
+**Project:** MyTasks mobile application  
+**Purpose:** Build the first useful guest experience as a local-first Flutter app.  
+**Status:** In progress — app shell batch is implemented; task data, storage, and task journeys remain.  
+**Owner:** Project owner and assistant, working in approved batches of at most five edited files.  
+**Baseline:** [FRS](FRS.md), [HLD](HLD.md), [LLD](LLD.md), [Implementation Roadmap](Implementation-Roadmap.md), [UI flows and wireframes](UI-Flow-and-Wireframe.md), and [Working Agreement](Working-Agreement.md).
+
+## 1. What M2 delivers
+
+M2 turns the Flutter scaffold into a useful guest task app. A guest can create and manage tasks without an account or network connection. The app stores data on the device, shows tasks in Today, Later, and Completed, records partial progress and completion history, and restores data after the app is closed and reopened.
+
+The M2 boundary is the local guest experience. It does not add sign-in, a task API, cloud synchronization, notifications, a study timer, or a calendar. The Java backend remains a foundation for later account and sync milestones. M2 should shape the local repository and data model so later synchronization can be added without making screens depend directly on SQLite.
+
+## 2. Current M2 snapshot
+
+| Area | State | Notes |
+|---|---|---|
+| Flutter dependency for state management | Started | Riverpod is in `pubspec.yaml` and its resolved versions are in `pubspec.lock`. |
+| App bootstrap | Complete | `ProviderScope` is the Riverpod root. |
+| App shell and navigation | First pass complete | Material 3 theme and Today/Later/Completed navigation with empty states are implemented. |
+| Guest profile | Not started | A stable local profile boundary is needed even before accounts exist. |
+| Task domain model and validation | Not started | Must match the field limits and date/progress rules in the LLD. |
+| Encrypted local persistence | Not started | Drift/SQLite with SQLCipher and a key protected by platform secure storage is the design baseline; verify package/platform setup before wiring UI. |
+| Task lists and task journeys | Not started | Create, view, edit, delete, progress, complete, reopen, and list behavior remain. |
+| Automated tests | Not part of the current work agreement | Do not add or run tests unless the owner asks. Use the agreed analysis/build/manual checks and explain any verification limitation. |
+
+The first app-shell batch changed `frontend/pubspec.yaml`, `frontend/pubspec.lock`, `frontend/lib/main.dart`, `frontend/lib/app/my_tasks_app.dart`, and `frontend/lib/app/app_shell.dart`. Flutter analysis passed and an Android debug APK built successfully after that batch. These checks verify the shell compiles; they do not verify task behavior or persistence.
+
+## 3. Product and technical rules M2 must preserve
+
+### Task fields and validation
+
+- Topic is required, trimmed, and at most 200 characters.
+- Subtopic is optional and at most 200 characters; description is optional and at most 5,000 characters.
+- Start date and planned end date are required. Planned end date must be on or after start date.
+- Maximum end date is optional; when provided it must be on or after the planned end date.
+- Estimated effort is a decimal number of hours, greater than zero, at most 99,999.99, with 0.01-hour precision. It means planned effort, not elapsed time or date duration.
+- Progress notes are at most 2,000 characters.
+
+Validation belongs in reusable domain/application logic, not only in form widgets. The form should show the same actionable messages as the UI flow document and preserve entered values when validation fails.
+
+### Date classification and list membership
+
+Use the current calendar date in `Asia/Kolkata` (IST). Store task dates as date-only values; do not turn them into UTC timestamps and risk shifting a date across time zones.
+
+```text
+if task is completed: Completed
+else if start date is after today: Later
+else: Today
+```
+
+An incomplete task whose planned end date is before today remains in Today and is visibly overdue. Do not move its planned end date forward automatically. A maximum-end-date breach can be shown as a separate status cue. Completed tasks appear only in Completed.
+
+### Effort and status appearance
+
+Use the five fixed effort bands and color tokens in `UI-Flow-and-Wireframe.md`. The same effort always maps to the same band regardless of the other tasks in the list. Current tasks use the green cue, while overdue red styling takes precedence. Always show numeric effort and a text label/icon so color is not the only signal. Scheduled and completed tasks do not use the current-task green scale.
+
+### Progress and lifecycle history
+
+A partial progress entry chooses exactly one method:
+
+- Percentage: integer or supported numeric value from 0 through 100. A 100% entry does not complete the task.
+- Units: completed and total units are both positive; completed cannot exceed total.
+- Note: required non-empty text up to 2,000 characters.
+
+A task can have multiple dated progress entries. Users can review, correct, or remove them. Full completion and reopening are separate lifecycle events; reopening does not erase the earlier completion event. Deleting a task removes its progress and lifecycle history too.
+
+## 4. Work sequence and teaching notes
+
+Work is split into small code batches. Before each batch, explain the files and purpose; edit no more than five files; then report what changed and what was checked. Ask before starting another file batch. A package or generated lockfile change counts as a file edit. Do not run Git commands unless the owner explicitly asks.
+
+### M2-A — App shell (complete)
+
+**Goal:** Have a runnable app with the agreed primary navigation before adding task behavior.
+
+**Implemented:** Added Riverpod dependency and app-level `ProviderScope`; set the Material 3 theme; added Today, Later, and Completed navigation and first-pass empty states.
+
+**What you learn:** Flutter starts at `main()`, builds a widget tree, and uses `MaterialApp` to provide navigation/theme defaults. Riverpod's `ProviderScope` is the root container where providers can later expose shared app state. A navigation shell gives each screen a stable place without putting database code in the navigation widget.
+
+**Verification recorded:** `flutter analyze` passed and an Android debug APK built. These are build checks, not automated behavior tests.
+
+### M2-B — Task rules and local profile foundation
+
+**Goal:** Define data and rules in plain Dart before storage and forms rely on them.
+
+**Planned work:**
+
+1. Define immutable task, progress-entry, and lifecycle-event types with locally generated UUIDs.
+2. Define a stable guest profile identifier and an explicit active-profile boundary. Keep every local query scoped to that profile, even though only guest mode is initially visible.
+3. Implement input validation for task and progress values using the approved LLD limits.
+4. Implement pure date classification and effort-band selection so the same input always produces the same result.
+5. Keep date-only values separate from timestamps for event occurrence/creation.
+
+**What you learn:** A domain model describes product concepts independently of Flutter screens or the database. Pure functions are easier to reason about because the same input produces the same output. UUIDs allow a task to keep its identity when offline and later sent to a server.
+
+**Review checkpoint:** Compare the model and validation cases with the FRS/LLD; correct any mismatch before storage is built around them.
+
+### M2-C — Encrypted local persistence
+
+**Goal:** Store guest data durably on device and provide a repository API the UI can use without knowing SQL.
+
+**Planned work:**
+
+1. Confirm the selected Drift, SQLite/SQLCipher, and secure-storage package versions against the current Flutter/Dart toolchain and Android target. Resolve any required native build hooks deliberately.
+2. Define versioned local tables for profile, task, progress entries, and lifecycle events. Preserve original planned dates and event timestamps.
+3. Generate Drift code as a documented build step, and add an initial local schema migration.
+4. Generate or retrieve the database encryption key through platform secure storage; do not hard-code or log it. Decide and document the guest data behavior if the key is missing or secure storage is reset. Never silently replace a key and pretend an unreadable database is empty.
+5. Add repository methods for task and history operations. Save a task mutation and its related lifecycle/history changes in a database transaction where they must be atomic.
+6. Scope reads and writes by local profile ID in the repository.
+
+**What you learn:** Drift maps typed Dart code to SQLite tables and queries. A database migration changes a user's local schema safely as the app evolves. Encryption protects the database file at rest; secure storage protects the key. A repository hides the storage mechanism from UI code, which makes future remote sync easier to add.
+
+**Review checkpoint:** Confirm a record survives app restart, profile scoping is explicit, the encrypted database opens on the supported Android development target, and schema upgrade behavior is understood before task UI depends on it. iOS native verification requires macOS/Xcode and remains a separate platform check.
+
+### M2-D — Task create/read/update/delete journey
+
+**Goal:** Complete the first end-to-end task journey from form to local database to list/detail.
+
+**Planned work:**
+
+1. Add the task creation form with the required topic, dates, and effort; optional subtopic, description, and maximum end date.
+2. Use date pickers and an explicitly labeled numeric effort input in hours. Keep date-only values as date-only domain values.
+3. Validate before saving; show field-specific messages and retain the user's input after errors.
+4. Save through an application/provider layer into the repository, then show the new task in its derived list.
+5. Add task detail and edit flows, followed by confirmed deletion that explains associated progress/history is removed.
+6. Handle loading, empty, saved, and recoverable error states without blocking unrelated navigation.
+
+**What you learn:** A form is a presentation layer; validation and save rules belong in reusable application/domain code. A provider can connect UI state to a repository. SQLite transactions keep related changes together if a write fails midway.
+
+**Review checkpoint:** Create a task with valid data; reject each invalid boundary; edit dates/effort and observe list membership/appearance update; delete and confirm its history is removed.
+
+### M2-E — Today, Later, and Completed lists
+
+**Goal:** Make the three top-level views display repository data using one shared classification rule.
+
+**Planned work:**
+
+1. Replace placeholder empty screens with provider-backed lists and useful first-task actions.
+2. Today contains open tasks whose start date is today or earlier, including overdue tasks. Show overdue text/icon and red styling where applicable.
+3. Later contains open tasks with a future start date. Sort by start date, then planned end date.
+4. Completed sorts most recently completed first. Add incremental loading and search/filter if necessary to meet the agreed completed-history scope; retain responsive existing content while fetching another page from local storage.
+5. Apply fixed effort bands only to non-overdue current tasks, with accessible labels and numeric hour values.
+6. Recompute date-based membership when the app resumes or the IST calendar day changes.
+
+**What you learn:** A list category is derived from task status and dates, rather than being a second status users must maintain. This avoids stale category values when midnight passes. Pagination loads history in manageable chunks instead of reading an unlimited history into memory.
+
+**Review checkpoint:** Review boundary dates (start today, end today, starts tomorrow, end yesterday, completed) and verify every task appears in exactly one correct view.
+
+### M2-F — Progress, completion, and reopening
+
+**Goal:** Preserve the user's work history while making partial progress and full completion distinct actions.
+
+**Planned work:**
+
+1. Add task detail history and the three mutually exclusive progress-entry forms.
+2. Validate and persist each entry with a stable ID and occurrence time; allow multiple entries over time.
+3. Add correction and deletion of an erroneous progress entry.
+4. Add a separate Full Complete action that records a lifecycle event and moves the task to Completed.
+5. Add reopen action for completed tasks; retain the prior completion event in history.
+6. Ensure a 100% partial progress entry leaves status OPEN until the user separately chooses Full Complete.
+
+**What you learn:** An event/history record captures what happened and when. Current task status is the latest state, while lifecycle events preserve how it reached that state. A transaction protects the relationship between state and its history.
+
+**Review checkpoint:** Verify partial progress never auto-completes, completion/reopen events are ordered and retained, and correcting/deleting a progress entry affects only that entry.
+
+### M2-G — Persistence and accessibility review
+
+**Goal:** Check the complete guest journey on Android and close M2 with clear known limitations.
+
+**Planned work:**
+
+1. Manually exercise create, view, edit, delete, progress, complete, reopen, and app-restart flows on the Android development target.
+2. Review empty/loading/validation/error states and ensure user-entered values are preserved after form errors.
+3. Review text scaling, screen-reader labels, touch targets, contrast, and non-color cues for effort, overdue, completed, and selection states.
+4. Check date behavior at IST day boundaries and after app resume; keep server sync and reminder behavior out of this milestone.
+5. Record platform-specific findings and update the M2 status and plan with actual evidence. iOS device/simulator verification remains pending until macOS/Xcode is available.
+
+**What you learn:** Manual verification checks the user journey end to end; static analysis and builds catch different classes of problems. Accessibility review checks that information remains understandable for users who do not perceive color or use default text size.
+
+## 5. M2 exit criteria
+
+M2 is complete when all of these are demonstrated and recorded:
+
+- Guest can create, view, edit, and delete tasks without an account or network connection.
+- Topic, optional fields, date order, maximum date, and effort validation match the LLD.
+- Today, Later, and Completed membership follows the IST rules, including overdue open tasks remaining in Today.
+- Current effort styling uses the selected fixed five-level mapping; overdue styling takes precedence; status and effort are understandable without color alone.
+- Partial progress supports percentage, units, or note as exactly one method; entries can be reviewed, corrected, and deleted.
+- Full completion and reopening are separate from partial progress, with lifecycle history retained while the task exists.
+- Local data survives app restart; task and related history changes behave consistently; data access is scoped to the active local profile.
+- Android Flutter analysis and debug build succeed using documented commands; manual Android journey and accessibility observations are recorded.
+- No sign-in, backend API dependency, sync, reminders, timer, or calendar has accidentally become a requirement for guest task use.
+- iOS verification status and the Mac/Xcode requirement are explicit.
+
+## 6. Commands and what they do
+
+Run from the repository root in PowerShell unless a command says otherwise. These commands can create or update local package/build artifacts; they do not commit or push code.
+
+```powershell
+cd "F:\MY PROJECT\MyTasks\frontend"
+& "C:\Users\yuvra\develop\MyTasksToolchains\flutter\bin\flutter.bat" pub get
+```
+
+`pub get` resolves packages from `pubspec.yaml` and updates the tracked `pubspec.lock` when dependencies change. Review that lockfile change as part of the same approved file batch.
+
+```powershell
+& "C:\Users\yuvra\develop\MyTasksToolchains\flutter\bin\flutter.bat" analyze
+```
+
+`analyze` checks Dart/Flutter code for static issues; it does not launch the app or prove runtime behavior.
+
+```powershell
+& "C:\Users\yuvra\develop\MyTasksToolchains\flutter\bin\flutter.bat" build apk --debug
+```
+
+`build apk --debug` compiles and packages a development Android APK under `frontend/build/`. The build output is generated locally and ignored by Git; it is not the release/store build.
+
+If a later batch adds Drift code generation, the exact generator command and generated files will be documented before running it. Do not run database-reset/deletion commands as a routine check; they can erase guest data.
+
+## 7. Out of scope and handoff
+
+- **M3:** local reminders, permission onboarding, notification privacy, scheduling/recovery, platform behavior. Android ongoing notifications are not promised to be unhideable.
+- **M4:** Java task/account APIs, authentication, cloud deployment, and server-owned task data.
+- **M5:** outbox, sync, guest transfer, and conflict resolution.
+- **Later:** study timer and calendar view, with original-versus-actual schedule reporting.
+
+The local task IDs, profile boundary, progress/lifecycle history, original planned dates, and repository interface should support these later phases. Do not implement speculative sync queues or backend endpoints as part of M2.
+
+## 8. Mini glossary
+
+| Term | Meaning in M2 |
+|---|---|
+| Domain model | Dart types and rules that describe tasks independently of UI and storage. |
+| Repository | An interface/layer the rest of the app uses to read and change data without depending directly on SQL. |
+| Drift | A Dart library that generates typed database access code for SQLite. |
+| SQLCipher | An SQLite-compatible encryption layer that encrypts the database file at rest. |
+| Migration | A versioned change to local database structure that preserves/updates existing user data. |
+| Provider | A Riverpod-managed value or operation that UI can observe and use. |
+| Event history | Dated records such as progress, completion, and reopening, retained alongside the current task state. |
+| IST date-only value | A calendar date interpreted in India Standard Time, without a UTC time component. |
