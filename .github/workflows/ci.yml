@@ -54,4 +54,4 @@ jobs:
           cache: maven
 
       - name: Compile backend
-        run: ./mvnw --batch-mode -DskipTests compile
+        run: bash ./mvnw --batch-mode -DskipTests compile

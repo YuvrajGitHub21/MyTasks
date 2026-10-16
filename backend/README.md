@@ -31,13 +31,13 @@ docker compose up -d database
 
 The Maven plugin starts the API entry point by default. Check health at `http://localhost:8080/actuator/health`, open the interactive API page at `http://localhost:8080/swagger-ui.html`, or inspect its OpenAPI JSON at `http://localhost:8080/v3/api-docs`.
 
-To start the worker entry point instead, run `./mvnw spring-boot:run -Dspring-boot.run.main-class=com.mytasks.worker.MyTasksWorkerApplication` (Windows: `mvnw.cmd spring-boot:run -Dspring-boot.run.main-class=com.mytasks.worker.MyTasksWorkerApplication`). Scheduled jobs are added in later milestones.
+On Linux and macOS, prefix Maven Wrapper commands with `bash` because the wrapper file is not marked executable in Git. To start the worker entry point instead, run `bash ./mvnw spring-boot:run -Dspring-boot.run.main-class=com.mytasks.worker.MyTasksWorkerApplication` (Windows: `mvnw.cmd spring-boot:run -Dspring-boot.run.main-class=com.mytasks.worker.MyTasksWorkerApplication`). Scheduled jobs are added in later milestones.
 
 Stop the database container with `docker compose down`. This preserves its named data volume; `docker compose down -v` also deletes the local database data.
 
 ### Linux and macOS
 
-From this `backend` folder, run `docker compose up -d database`, then `./mvnw spring-boot:run`. The Maven Wrapper uses the Java version available through `JAVA_HOME` or `PATH`.
+From this `backend` folder, run `docker compose up -d database`, then `bash ./mvnw spring-boot:run`. The Maven Wrapper uses the Java version available through `JAVA_HOME` or `PATH`.
 
 The local database defaults are development-only and bind to localhost. Copy `.env.example` to `.env` only if you need to override Docker Compose values. Never reuse these defaults outside local development.
 
