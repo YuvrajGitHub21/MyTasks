@@ -7,9 +7,9 @@ This folder contains the Java 25 LTS Spring Boot modular monolith. The API and w
 Prerequisites: Java 25 and Docker Desktop.
 
 1. Start PostgreSQL: `docker compose up -d database`
-2. Run the API: `./mvnw spring-boot:run` (Windows: `mvnw.cmd spring-boot:run`)
+2. Run the API: `./mvnw spring-boot:run` (Windows: `mvnw.cmd spring-boot:run`). The Maven plugin is configured to start the API entry point by default.
 3. Check health at `http://localhost:8080/actuator/health`.
-4. The worker entry point is `com.mytasks.worker.MyTasksWorkerApplication`; scheduled jobs are added in later milestones.
+4. To start the worker entry point instead, run `./mvnw spring-boot:run -Dspring-boot.run.main-class=com.mytasks.worker.MyTasksWorkerApplication` (Windows: `mvnw.cmd spring-boot:run -Dspring-boot.run.main-class=com.mytasks.worker.MyTasksWorkerApplication`). Scheduled jobs are added in later milestones.
 
 The local database defaults are development-only and bind to localhost. Copy `.env.example` to `.env` only if you need to override Docker Compose values. Never reuse these defaults outside local development.
 

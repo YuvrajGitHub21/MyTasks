@@ -5,7 +5,7 @@
 
 **Date:** 16 October 2026
 
-**Related:** [Implementation Roadmap](Implementation-Roadmap.md), [FRS](FRS.md), [HLD](HLD.md), [LLD](LLD.md), [UI flow and preview](UI-Flow-and-Wireframe.md)
+**Related:** [Implementation Roadmap](Implementation-Roadmap.md), [Detailed M1 plan](M1-Implementation-Plan.md), [FRS](FRS.md), [HLD](HLD.md), [LLD](LLD.md), [UI flow and preview](UI-Flow-and-Wireframe.md)
 
 ## How we will work
 
@@ -103,11 +103,11 @@ Use a clean checkout to follow the written setup instructions. Review dependency
 ### M1 progress record — 16 October 2026
 
 - M1.1: top-level `Documentation/`, `frontend/`, and `backend/` layout and root ignore rules are in place.
-- M1.2: Java 25.0.4.1, Maven Wrapper 3.10.0, and Spring Boot 4.1.1 API/worker entry points are installed/configured. The backend compile-only build succeeds with tests skipped.
-- M1.3: local PostgreSQL 18.6 Compose configuration, environment-variable database settings, Actuator health endpoints, and Flyway schema baseline are in place.
-- M1.2: Flutter 3.47.7 / Dart 3.13.5 is installed; the Android/iOS scaffolds and `pubspec.lock` are in place. Flutter static analysis reports no issues, and an Android debug APK builds successfully. The first build installed the required Android NDK 28.2.13676358.
-- M1.3: PostgreSQL 18.6 Compose configuration, environment-variable database settings, Actuator health endpoints, and Flyway schema baseline are in place. `docker compose config --quiet` succeeds. The Docker CLI is installed, but the Docker Desktop engine is not running, so the database migration could not yet be exercised against a running local database.
-- Remaining before M1 exit: start the local Docker engine and exercise the PostgreSQL migration, verify setup from the documented commands, and perform iOS build verification on macOS/Xcode. Windows cannot produce an iOS build. No automated tests have been added or run.
+- M1.2: Java 25.0.4.1, Maven Wrapper 3.10.0, Spring Boot 4.1.1 API/worker entry points, Flutter 3.47.7 / Dart 3.13.5, Android/iOS scaffolds, and `pubspec.lock` are in place. Backend compile and Flutter analysis succeeded; an Android debug APK built successfully. The first Android build installed NDK 28.2.13676358.
+- M1.3: PostgreSQL 18.6 Compose configuration, environment-variable database settings, Actuator health endpoints, and Flyway schema baseline are in place. Docker Desktop 29.4.1 ran PostgreSQL successfully; the API returned health `UP`, schema `app` exists, and Flyway history confirms V1 succeeded. The Spring Boot Maven plugin uses the API main class by default.
+- M1 API baseline: Springdoc 3.1.1 exposes `/v3/api-docs` with MyTasks `v1` metadata. The request-ID filter returns `X-Request-ID`; shared validation and unexpected-error handlers compile. The OpenAPI `paths` list is empty until business endpoints are implemented, so error behavior still needs runtime verification later.
+- Remaining before M1 exit: add GitHub CI and complete the clean local setup walkthrough. iOS native build verification requires macOS/Xcode; Windows supports the shared Flutter/Dart work but cannot compile the iOS app. No automated tests have been added or run.
+- Detailed steps, learning notes, commands, and exit criteria are in [M1 Implementation Plan](M1-Implementation-Plan.md).
 
 ## After M1 — First product increment
 
