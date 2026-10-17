@@ -132,7 +132,19 @@ Add Drift tables and the version-1-to-version-2 migration, preference/schedule r
 
 **Goal:** Initialize the plugin and verify one generic test notification on Android before implementing business scheduling.
 
-At implementation time, recheck and pin compatible `flutter_local_notifications` and `timezone` versions. Initialize tz data once and set the schedule location to `Asia/Kolkata`. Configure a normal task-reminders channel and notification tap callback. Add only required native setup: Android notification/boot permissions and receivers, desugaring, and minimum compile SDK; iOS notification delegate/configuration source changes. Do not add exact-alarm, full-screen-intent, Do Not Disturb, or foreground-service permissions.
+The dependency/platform foundation batch has been implemented with `flutter_local_notifications: ^22.3.2` and `timezone: ^0.11.2` (resolved exact versions are in `frontend/pubspec.lock`). The Android app now enables core-library desugaring and declares the plugin's scheduled-notification receiver, plus boot/package-replacement recovery receiver and `RECEIVE_BOOT_COMPLETED`. The app's Flutter-provided compile SDK and current AGP already meet the plugin's stated minimums, so neither was changed. Exact-alarm, full-screen-intent, Do Not Disturb, and foreground-service permissions were not added.
+
+The Dart startup initializer is now in `frontend/lib/data/notifications/local_notification_initializer.dart` and is awaited before the Flutter UI starts. It initializes the bundled IANA time-zone data, sets the default scheduling zone to `Asia/Kolkata`, and initializes Android/iOS plugin settings with iOS permission prompts disabled. It also creates Android's `Task reminders` channel. If setup fails, startup logs the error in debug output and still opens the task app. No notification is scheduled or displayed yet.
+
+The Android initializer now creates the normal `Task reminders` channel with default importance. On iOS, `AppDelegate.swift` assigns the app delegate to `UNUserNotificationCenter` so foreground presentation and notification responses can be integrated with the plugin. These steps do not request permission or schedule reminders.
+
+Still remaining in M3-C: wire a notification-tap callback to app navigation and show a generic test notification through an explicit user action. Android delivery and iOS source/build/runtime behavior still need platform verification; iOS compilation requires macOS/Xcode.
+
+**Startup verification (18 October 2026):** `flutter build apk --debug --no-pub` succeeded after startup initialization was added and produced `frontend/build/app/outputs/flutter-apk/app-debug.apk`. The cached Android build completed in about 40 seconds. This verifies compilation, not runtime notification delivery; no automated tests or physical-device checks were run for this batch.
+
+**Channel and delegate verification (18 October 2026):** The Android debug APK rebuilt successfully after channel creation was added. This confirms Android compilation of the channel setup. The iOS delegate edit could not be compiled in the Windows environment; verify it on macOS/Xcode before claiming iOS support.
+
+**Verification (18 October 2026):** `flutter pub get` resolved the dependencies successfully, and `flutter build apk --debug --no-pub` completed successfully with the project JDK 25 and produced `frontend/build/app/outputs/flutter-apk/app-debug.apk`. The first Android build took about 4.5 minutes while Gradle initialized/downloaded dependencies. No automated tests were run. This confirms Android compilation of the plugin/platform setup; it does not yet prove notification delivery or reboot recovery on a device.
 
 **Learning:** Flutter plugins bridge Dart code to native Android/iOS APIs. Android notification channels are created once and users control their sound/visibility settings. Desugaring backports selected Java library APIs for older Android versions; it is separate from the Java runtime used by Gradle.
 
