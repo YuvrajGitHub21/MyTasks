@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/tasks/task_use_cases.dart';
@@ -47,6 +50,45 @@ final taskListProvider = StreamProvider.family<List<Task>, TaskCategory>((
   ref,
   category,
 ) async* {
+  // Rebuild the category query at IST midnight, even if SQLite has no writes.
+  final midnightTimer = Timer(
+    _durationUntilNextIstMidnight(),
+    ref.invalidateSelf,
+  );
+  ref.onDispose(midnightTimer.cancel);
+
+  // A timer may be delayed while Android suspends the app. Refresh immediately
+  // when the user returns so Today/Later use the current IST date.
+  final lifecycleObserver = _TaskListLifecycleObserver(ref.invalidateSelf);
+  WidgetsBinding.instance.addObserver(lifecycleObserver);
+  ref.onDispose(
+    () => WidgetsBinding.instance.removeObserver(lifecycleObserver),
+  );
+
   final watchTasks = await ref.watch(watchTasksUseCaseProvider.future);
   yield* watchTasks(category);
 });
+
+Duration _durationUntilNextIstMidnight() {
+  const istOffset = Duration(hours: 5, minutes: 30);
+  final utcNow = DateTime.now().toUtc();
+  final istNow = utcNow.add(istOffset);
+  final nextIstMidnight = DateTime.utc(
+    istNow.year,
+    istNow.month,
+    istNow.day + 1,
+  );
+  final nextMidnightUtc = nextIstMidnight.subtract(istOffset);
+  return nextMidnightUtc.difference(utcNow);
+}
+
+class _TaskListLifecycleObserver with WidgetsBindingObserver {
+  _TaskListLifecycleObserver(this._onResume);
+
+  final VoidCallback _onResume;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _onResume();
+  }
+}

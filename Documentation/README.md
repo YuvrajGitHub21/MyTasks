@@ -15,3 +15,6 @@ Project documents are kept together here so design decisions and implementation 
 
 - [Implementation Roadmap](Implementation-Roadmap.md) — milestones M0 through M6 and their exit criteria.
 - [Phase-wise Implementation Plan](Implementation-Plan.md) — actionable phases for M0 and M1, review gates, and the first coding slice.
+- [M1 Implementation Plan](M1-Implementation-Plan.md) — repository and engineering foundation.
+- [M2 Implementation Plan](M2-Implementation-Plan.md) — local-first guest task app; complete on Android.
+- [M3 Implementation Plan](M3-Implementation-Plan.md) — local reminders, permission handling, scheduling, and platform verification.

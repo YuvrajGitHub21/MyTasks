@@ -70,6 +70,8 @@ Study timer, calendar view, data export, collaboration, recurring tasks, and adv
 
 ### M2 — Local-first task app (guest MVP core)
 
+**Status: Complete — 17 October 2026.** Android guest task journeys, local persistence, accessibility review, Flutter analysis, and debug build passed. The IST day refresh was added and verified after app resume. iOS build/device validation remains pending until macOS/Xcode is available. See [detailed M2 implementation plan](M2-Implementation-Plan.md).
+
 **Goal:** Deliver a reliable, useful task application before depending on the network.
 
 **Work:**
@@ -84,6 +86,8 @@ Study timer, calendar view, data export, collaboration, recurring tasks, and adv
 **Exit criteria:** Guest can create and manage tasks offline; list membership matches the agreed date rules; invalid values are rejected consistently; progress/completion history is preserved as specified; app relaunch keeps data; profiles cannot see one another's local data; screens meet the agreed accessibility review.
 
 ### M3 — Reminders and platform behavior
+
+**Status: Plan prepared; implementation not started.** See [detailed M3 implementation plan](M3-Implementation-Plan.md).
 
 **Goal:** Deliver local guest reminders and validate notification expectations on Android and iOS.
 

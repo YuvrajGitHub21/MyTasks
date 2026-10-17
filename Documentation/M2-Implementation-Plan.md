@@ -2,7 +2,7 @@
 
 **Project:** MyTasks mobile application  
 **Purpose:** Build the first useful guest experience as a local-first Flutter app.  
-**Status:** In progress — encrypted local storage and Onion boundaries are in place; task creation, the three live list views, task details, task editing, confirmed task deletion, partial-progress logging/history with correction/deletion, and completion/reopen controls with lifecycle history are implemented. Journey verification remains.
+**Status:** Complete — 17 October 2026. Android task journeys, persistence, accessibility review, Flutter analysis, and debug build passed. iOS device/build validation remains pending because macOS/Xcode is not available.
 **Owner:** Project owner and assistant, working in approved batches of at most five edited files.  
 **Baseline:** [FRS](FRS.md), [HLD](HLD.md), [LLD](LLD.md), [Implementation Roadmap](Implementation-Roadmap.md), [UI flows and wireframes](UI-Flow-and-Wireframe.md), and [Working Agreement](Working-Agreement.md).
 
@@ -16,14 +16,14 @@ The M2 boundary is the local guest experience. It does not add sign-in, a task A
 
 | Area | State | Notes |
 |---|---|---|
-| Flutter dependency for state management | Started | Riverpod is in `pubspec.yaml` and its resolved versions are in `pubspec.lock`. |
+| Flutter dependency for state management | Complete | Riverpod is in `pubspec.yaml` and its resolved versions are in `pubspec.lock`. |
 | App bootstrap | Complete | `ProviderScope` is the Riverpod root. |
-| App shell and navigation | First UI slice complete | Material 3 theme and Today/Later/Completed navigation; each view is connected to the profile-scoped task stream and create form. |
+| App shell and navigation | Complete on Android | Material 3 theme and Today/Later/Completed navigation; each view is connected to the profile-scoped task stream and create form. |
 | Guest profile | Implemented foundation | `LocalProfileStore` creates or reuses a UUID-backed guest profile; the app composition root supplies profile-scoped application actions. Screens do not import local repository providers. |
 | Onion boundaries | Implemented foundation | Task, progress, and lifecycle contracts are domain-owned; application use cases depend on those contracts; Drift repositories implement them; app-level Riverpod providers compose the outer adapters. Backend entry point and HTTP error handling are in bootstrap/adapter packages; backend feature domain/use-case code will be added with M4 features. |
 | Task domain model and validation | Implemented | `Task`, `ProgressEntry`, `LifecycleEvent`, `TaskDate`, and reusable rules match the LLD; task creation validation runs through an application use case. |
-| Encrypted local persistence | Repository foundation implemented | Encrypted Drift connection, version-1 tables, database/profile providers, and profile-scoped task/progress CRUD plus atomic completion/reopen history operations exist. Runtime persistence checks remain. |
-| Task lists and task journeys | First slices complete | Task creation, live Today/Later/Completed lists, task detail, editing, confirmed deletion, progress logging/history with correction/deletion, and complete/reopen actions with dated lifecycle history are connected. Deletion warns that task progress and lifecycle history are also permanently removed. Manual journey checks remain. |
+| Encrypted local persistence | Android verified | Encrypted Drift connection, version-1 tables, database/profile providers, and profile-scoped task/progress CRUD plus atomic completion/reopen history operations are implemented; Android restart preserved local data. |
+| Task lists and task journeys | Complete on Android | Task creation, live Today/Later/Completed lists, task detail, editing, confirmed deletion, progress logging/history with correction/deletion, and complete/reopen actions with dated lifecycle history passed the owner's Android journey checks. |
 | Automated tests | Not part of the current work agreement | Do not add or run tests unless the owner asks. Use the agreed analysis/build/manual checks and explain any verification limitation. |
 
 The first app-shell batch changed `frontend/pubspec.yaml`, `frontend/pubspec.lock`, `frontend/lib/main.dart`, `frontend/lib/app/my_tasks_app.dart`, and `frontend/lib/app/app_shell.dart`. Flutter analysis passed and an Android debug APK built successfully after that batch. These checks verify the shell compiles; they do not verify task behavior or persistence.
@@ -113,7 +113,7 @@ Work is split into small code batches. Before each batch, explain the files and 
 
 **Planned work:**
 
-1. Use the selected compatible stable packages: Drift 2.35.2, drift_flutter 0.3.1, sqlite3 3.7.1, flutter_secure_storage 11.2.0, path 1.9.1, path_provider 2.1.6, uuid 4.6.0, drift_dev 2.35.1, and build_runner 2.16.2. `pubspec.lock` pins the resolved versions. The `sqlite3` build hook selects SQLite3MultipleCiphers (`source: sqlite3mc`); its default cipher is sqleet ChaCha20-Poly1305. The project includes its MIT license notice in the future app license screen.
+1. Use the selected compatible stable packages: Drift 2.35.2, drift_flutter 0.3.1, sqlite3 3.7.1, flutter_secure_storage 11.2.0, path 1.9.1, path_provider 2.1.6, uuid 4.6.0, drift_dev 2.35.1, and build_runner 2.16.2. `pubspec.lock` pins the resolved versions. The `sqlite3` build hook selects SQLite3MultipleCiphers (`source: sqlite3mc`); its default `sqleet` ChaCha20-Poly1305 scheme uses the runtime pragma name `chacha20`. The project includes its MIT license notice in the future app license screen.
 2. Define versioned local tables for profile, task, progress entries, and lifecycle events. Preserve original planned dates and event timestamps. Schema version 1 is implemented; sync outbox/cursor tables are deferred to M5.
 3. Generate Drift code with `dart run build_runner build`; create all version-1 tables on a new database and enable SQLite foreign keys whenever it opens.
 4. Generate a cryptographically random database encryption key and retrieve it through platform secure storage; do not hard-code or log it. If the key is missing or secure storage was reset, fail closed and explain that the local database cannot be opened; never silently replace the key and present unreadable guest data as an empty database.
@@ -165,16 +165,16 @@ Work is split into small code batches. Before each batch, explain the files and 
 
 **Goal:** Preserve the user's work history while making partial progress and full completion distinct actions.
 
-**Repository foundation and UI implemented; journey verification remains.** Progress can be logged as a percentage, completed/total units, or a note; task details show dated history, and entries can be corrected or deleted. Confirmed completion and reopening actions update task state atomically with lifecycle events; task details show the dated events, retaining prior completions after reopening.
+**Implementation and Android journey verification complete.** Progress can be logged as a percentage, completed/total units, or a note; task details show dated history, and entries can be corrected or deleted. Confirmed completion and reopening actions update task state atomically with lifecycle events; task details show the dated events, retaining prior completions after reopening. The owner reported that the progress, completion, and reopening journeys passed on the connected Android phone.
 
-**Remaining work:**
+**Implemented behavior:**
 
 1. Implemented: task details show a live progress history and a form with three mutually exclusive progress methods.
 2. Implemented: progress is validated and persisted with an application-generated stable ID and occurrence time; multiple entries can be recorded.
 3. Implemented: correct a progress entry while preserving its ID, task/profile ownership, occurrence time, and creation time; confirmed deletion removes only the selected entry.
 4. Implemented: a separate confirmed Full Complete action updates task status and writes a lifecycle event atomically.
 5. Implemented: completed tasks can be reopened after confirmation; the prior completion event remains in the dated history.
-6. Ensure a 100% partial progress entry leaves status OPEN until the user separately chooses Full Complete.
+6. Implemented: a 100% partial progress entry leaves status OPEN until the user separately chooses Full Complete.
 
 **What you learn:** An event/history record captures what happened and when. Current task status is the latest state, while lifecycle events preserve how it reached that state. A transaction protects the relationship between state and its history.
 
@@ -184,19 +184,27 @@ Work is split into small code batches. Before each batch, explain the files and 
 
 **Goal:** Check the complete guest journey on Android and close M2 with clear known limitations.
 
-**Planned work:**
+**Build evidence (2026-10-17):** Flutter analysis completed with `No issues found!` after the IST-refresh change. The Android debug APK rebuilt successfully using the project JDK (`C:\Users\yuvra\develop\MyTasksToolchains\jdk-25.0.4.1+1`), was installed on the connected Android 12 phone, and launched without database or Flutter exceptions. The owner verified that current and future tasks remained in the expected views after the update and that the accessibility and app-resume checks passed. The machine-level `JAVA_HOME` points to the installed project JDK; for this PowerShell session, the build command can set it explicitly:
 
-1. Manually exercise create, view, edit, delete, progress, complete, reopen, and app-restart flows on the Android development target.
-2. Review empty/loading/validation/error states and ensure user-entered values are preserved after form errors.
-3. Review text scaling, screen-reader labels, touch targets, contrast, and non-color cues for effort, overdue, completed, and selection states.
-4. Check date behavior at IST day boundaries and after app resume; keep server sync and reminder behavior out of this milestone.
-5. Record platform-specific findings and update the M2 status and plan with actual evidence. iOS device/simulator verification remains pending until macOS/Xcode is available.
+```powershell
+$env:JAVA_HOME = 'C:\Users\yuvra\develop\MyTasksToolchains\jdk-25.0.4.1+1'
+& 'C:\Users\yuvra\develop\MyTasksToolchains\flutter\bin\flutter.bat' build apk --debug --no-pub
+```
+
+The project owner manually verified task creation, Today and Later list membership, viewing, editing, progress, completion, reopening, increased display/font size, screen-reader labels, and app resume on the connected Android phone and reported that all checks passed. The assistant independently confirmed that the Today task remained visible after force-stopping and relaunching the app, and found no database or Flutter exceptions in the app process logs. App data was not reset. Code review found that the task category date had been captured when the database stream started, so an open app could keep stale Today/Later membership across IST midnight. The task-list provider now schedules a refresh at the next IST midnight and invalidates when the app resumes. The corrected APK built, installed, and opened successfully; the owner confirmed the post-update checks passed. An exact midnight transition was not observed in real time; the fixed IST scheduling calculation and resume refresh were reviewed, and the Android build was verified. Android journey, persistence, and accessibility checks are complete. iOS device/simulator verification remains pending until macOS/Xcode is available.
+
+**M2-G verification record:**
+
+1. Complete: the owner exercised task creation, Today/Later membership, viewing, editing, progress, completion, and reopening; persistence after restart was confirmed.
+2. Complete: Android accessibility review covered enlarged text/display, screen-reader labels, touch controls, contrast, and text/icon cues; the owner reported no issues.
+3. Complete: Flutter analysis reported `No issues found!`; the post-fix Android debug APK built, installed, and opened without database or Flutter exceptions.
+4. Complete: Today/Later recomputation is scheduled for the next IST midnight and on app resume. The owner confirmed the post-update list and resume checks passed. The exact midnight instant was not observed in real time; iOS device/simulator verification remains pending until macOS/Xcode is available.
 
 **What you learn:** Manual verification checks the user journey end to end; static analysis and builds catch different classes of problems. Accessibility review checks that information remains understandable for users who do not perceive color or use default text size.
 
 ## 5. M2 exit criteria
 
-M2 is complete when all of these are demonstrated and recorded:
+M2 completion record — all Android guest MVP exit criteria were demonstrated or reviewed on 17 October 2026. iOS validation is a documented platform follow-up that requires macOS/Xcode.
 
 - Guest can create, view, edit, and delete tasks without an account or network connection.
 - Topic, optional fields, date order, maximum date, and effort validation match the LLD.

@@ -30,7 +30,9 @@ final class EncryptedDatabaseConnection {
         databasePath: () async => databasePath,
         setup: (commonDatabase) {
           if (commonDatabase is! sqlite.Database) {
-            throw StateError('Encrypted SQLite is unavailable on this platform.');
+            throw StateError(
+              'Encrypted SQLite is unavailable on this platform.',
+            );
           }
 
           final cipherRows = commonDatabase.select('PRAGMA cipher;');
@@ -41,7 +43,9 @@ final class EncryptedDatabaseConnection {
             );
           }
 
-          commonDatabase.execute("PRAGMA cipher = 'sqleet';");
+          // SQLite3MultipleCiphers selects the sqleet ChaCha20-Poly1305
+          // scheme using the pragma name `chacha20`.
+          commonDatabase.execute("PRAGMA cipher = 'chacha20';");
           commonDatabase.execute("PRAGMA key = 'raw:$key';");
 
           // Force SQLite to read an encrypted page now. A wrong key must fail
