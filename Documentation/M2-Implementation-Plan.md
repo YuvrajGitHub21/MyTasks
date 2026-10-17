@@ -2,7 +2,7 @@
 
 **Project:** MyTasks mobile application  
 **Purpose:** Build the first useful guest experience as a local-first Flutter app.  
-**Status:** In progress — encrypted local storage and Onion boundaries are in place; task creation, the three live list views, task details, task editing, confirmed task deletion, and initial partial-progress logging/history are implemented. Progress correction/deletion, completion controls, and journey verification remain.
+**Status:** In progress — encrypted local storage and Onion boundaries are in place; task creation, the three live list views, task details, task editing, confirmed task deletion, partial-progress logging/history with correction/deletion, and completion/reopen controls with lifecycle history are implemented. Journey verification remains.
 **Owner:** Project owner and assistant, working in approved batches of at most five edited files.  
 **Baseline:** [FRS](FRS.md), [HLD](HLD.md), [LLD](LLD.md), [Implementation Roadmap](Implementation-Roadmap.md), [UI flows and wireframes](UI-Flow-and-Wireframe.md), and [Working Agreement](Working-Agreement.md).
 
@@ -23,7 +23,7 @@ The M2 boundary is the local guest experience. It does not add sign-in, a task A
 | Onion boundaries | Implemented foundation | Task, progress, and lifecycle contracts are domain-owned; application use cases depend on those contracts; Drift repositories implement them; app-level Riverpod providers compose the outer adapters. Backend entry point and HTTP error handling are in bootstrap/adapter packages; backend feature domain/use-case code will be added with M4 features. |
 | Task domain model and validation | Implemented | `Task`, `ProgressEntry`, `LifecycleEvent`, `TaskDate`, and reusable rules match the LLD; task creation validation runs through an application use case. |
 | Encrypted local persistence | Repository foundation implemented | Encrypted Drift connection, version-1 tables, database/profile providers, and profile-scoped task/progress CRUD plus atomic completion/reopen history operations exist. Runtime persistence checks remain. |
-| Task lists and task journeys | First slices complete | Task creation, live Today/Later/Completed lists, task detail, editing, confirmed deletion, and initial progress logging/history are connected. Deletion warns that task progress and lifecycle history are also permanently removed. Progress correction/deletion, complete/reopen actions, and manual journey checks remain. |
+| Task lists and task journeys | First slices complete | Task creation, live Today/Later/Completed lists, task detail, editing, confirmed deletion, progress logging/history with correction/deletion, and complete/reopen actions with dated lifecycle history are connected. Deletion warns that task progress and lifecycle history are also permanently removed. Manual journey checks remain. |
 | Automated tests | Not part of the current work agreement | Do not add or run tests unless the owner asks. Use the agreed analysis/build/manual checks and explain any verification limitation. |
 
 The first app-shell batch changed `frontend/pubspec.yaml`, `frontend/pubspec.lock`, `frontend/lib/main.dart`, `frontend/lib/app/my_tasks_app.dart`, and `frontend/lib/app/app_shell.dart`. Flutter analysis passed and an Android debug APK built successfully after that batch. These checks verify the shell compiles; they do not verify task behavior or persistence.
@@ -165,15 +165,15 @@ Work is split into small code batches. Before each batch, explain the files and 
 
 **Goal:** Preserve the user's work history while making partial progress and full completion distinct actions.
 
-**Repository foundation and initial progress UI implemented; completion UI and journey verification remain.** Progress can be logged as a percentage, completed/total units, or a note; task details show the dated history. Completion/reopening is recorded atomically with current task status, and the repository exposes ordered lifecycle history.
+**Repository foundation and UI implemented; journey verification remains.** Progress can be logged as a percentage, completed/total units, or a note; task details show dated history, and entries can be corrected or deleted. Confirmed completion and reopening actions update task state atomically with lifecycle events; task details show the dated events, retaining prior completions after reopening.
 
 **Remaining work:**
 
 1. Implemented: task details show a live progress history and a form with three mutually exclusive progress methods.
 2. Implemented: progress is validated and persisted with an application-generated stable ID and occurrence time; multiple entries can be recorded.
-3. Add correction and deletion of an erroneous progress entry.
-4. Add a separate Full Complete action that calls the lifecycle repository and moves the task to Completed.
-5. Add reopen action for completed tasks; retain the prior completion event in history.
+3. Implemented: correct a progress entry while preserving its ID, task/profile ownership, occurrence time, and creation time; confirmed deletion removes only the selected entry.
+4. Implemented: a separate confirmed Full Complete action updates task status and writes a lifecycle event atomically.
+5. Implemented: completed tasks can be reopened after confirmation; the prior completion event remains in the dated history.
 6. Ensure a 100% partial progress entry leaves status OPEN until the user separately chooses Full Complete.
 
 **What you learn:** An event/history record captures what happened and when. Current task status is the latest state, while lifecycle events preserve how it reached that state. A transaction protects the relationship between state and its history.

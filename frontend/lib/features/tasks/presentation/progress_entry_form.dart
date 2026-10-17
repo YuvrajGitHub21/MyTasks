@@ -6,9 +6,10 @@ import '../../../application/progress/progress_use_cases.dart';
 import '../../../domain/entities/progress_entry.dart';
 
 class ProgressEntryForm extends ConsumerStatefulWidget {
-  const ProgressEntryForm({required this.taskId, super.key});
+  const ProgressEntryForm({required this.taskId, this.entry, super.key});
 
   final String taskId;
+  final ProgressEntry? entry;
 
   @override
   ConsumerState<ProgressEntryForm> createState() => _ProgressEntryFormState();
@@ -23,6 +24,18 @@ class _ProgressEntryFormState extends ConsumerState<ProgressEntryForm> {
   ProgressMethod _method = ProgressMethod.percent;
   bool _saving = false;
   String? _saveError;
+
+  @override
+  void initState() {
+    super.initState();
+    final entry = widget.entry;
+    if (entry == null) return;
+    _method = entry.method;
+    _percentController.text = entry.percentComplete?.toString() ?? '';
+    _completedUnitsController.text = entry.completedUnits?.toString() ?? '';
+    _totalUnitsController.text = entry.totalUnits?.toString() ?? '';
+    _noteController.text = entry.note ?? '';
+  }
 
   @override
   void dispose() {
@@ -49,7 +62,7 @@ class _ProgressEntryFormState extends ConsumerState<ProgressEntryForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Log partial progress',
+              widget.entry == null ? 'Log partial progress' : 'Edit progress',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
@@ -159,7 +172,9 @@ class _ProgressEntryFormState extends ConsumerState<ProgressEntryForm> {
                       dimension: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Save progress'),
+                  : Text(
+                      widget.entry == null ? 'Save progress' : 'Save changes',
+                    ),
             ),
           ],
         ),
@@ -181,26 +196,55 @@ class _ProgressEntryFormState extends ConsumerState<ProgressEntryForm> {
       _saveError = null;
     });
 
-    final input = RecordProgressInput(
-      taskId: widget.taskId,
-      method: _method,
-      percentComplete: _method == ProgressMethod.percent
-          ? int.parse(_percentController.text.trim())
-          : null,
-      completedUnits: _method == ProgressMethod.units
-          ? int.parse(_completedUnitsController.text.trim())
-          : null,
-      totalUnits: _method == ProgressMethod.units
-          ? int.parse(_totalUnitsController.text.trim())
-          : null,
-      note: _method == ProgressMethod.note ? _noteController.text.trim() : null,
-    );
+    final current = widget.entry;
+    final percentComplete = _method == ProgressMethod.percent
+        ? int.parse(_percentController.text.trim())
+        : null;
+    final completedUnits = _method == ProgressMethod.units
+        ? int.parse(_completedUnitsController.text.trim())
+        : null;
+    final totalUnits = _method == ProgressMethod.units
+        ? int.parse(_totalUnitsController.text.trim())
+        : null;
+    final note = _method == ProgressMethod.note
+        ? _noteController.text.trim()
+        : null;
 
     try {
-      final recordProgress = await ref.read(
-        recordProgressUseCaseProvider.future,
-      );
-      await recordProgress(input);
+      if (current == null) {
+        final recordProgress = await ref.read(
+          recordProgressUseCaseProvider.future,
+        );
+        await recordProgress(
+          RecordProgressInput(
+            taskId: widget.taskId,
+            method: _method,
+            percentComplete: percentComplete,
+            completedUnits: completedUnits,
+            totalUnits: totalUnits,
+            note: note,
+          ),
+        );
+      } else {
+        final correctEntry = await ref.read(
+          correctProgressEntryUseCaseProvider.future,
+        );
+        await correctEntry(
+          ProgressEntry(
+            id: current.id,
+            taskId: current.taskId,
+            profileId: current.profileId,
+            method: _method,
+            percentComplete: percentComplete,
+            completedUnits: completedUnits,
+            totalUnits: totalUnits,
+            note: note,
+            occurredAt: current.occurredAt,
+            createdAt: current.createdAt,
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+      }
       if (mounted) Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;

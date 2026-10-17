@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/task_use_case_providers.dart';
 import '../../../domain/entities/task.dart';
 import '../../../domain/rules/task_rules.dart';
+import 'lifecycle_controls.dart';
+import 'lifecycle_history_section.dart';
 import 'progress_history_section.dart';
 import 'task_form_screen.dart';
 
@@ -148,7 +150,9 @@ class _TaskDetails extends StatelessWidget {
           const SizedBox(height: 8),
           Text(task.description!),
         ],
+        LifecycleControls(taskId: taskId, status: task.status),
         ProgressHistorySection(taskId: taskId),
+        LifecycleHistorySection(taskId: taskId),
       ],
     );
   }

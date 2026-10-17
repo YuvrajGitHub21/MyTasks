@@ -39,7 +39,7 @@ class ProgressHistorySection extends ConsumerWidget {
               : Column(
                   children: [
                     for (final entry in entries)
-                      _ProgressHistoryItem(entry: entry),
+                      _ProgressHistoryItem(entry: entry, taskId: taskId),
                   ],
                 ),
         ),
@@ -57,13 +57,14 @@ class ProgressHistorySection extends ConsumerWidget {
   }
 }
 
-class _ProgressHistoryItem extends StatelessWidget {
-  const _ProgressHistoryItem({required this.entry});
+class _ProgressHistoryItem extends ConsumerWidget {
+  const _ProgressHistoryItem({required this.entry, required this.taskId});
 
   final ProgressEntry entry;
+  final String taskId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final label = switch (entry.method) {
       ProgressMethod.percent => '${entry.percentComplete}% complete',
       ProgressMethod.units =>
@@ -83,6 +84,65 @@ class _ProgressHistoryItem extends StatelessWidget {
       leading: const Icon(Icons.history),
       title: Text(label),
       subtitle: Text(date),
+      trailing: PopupMenuButton<String>(
+        tooltip: 'Progress entry actions',
+        onSelected: (action) {
+          if (action == 'edit') _edit(context);
+          if (action == 'delete') _delete(context, ref);
+        },
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'edit', child: Text('Edit')),
+          PopupMenuItem(value: 'delete', child: Text('Delete')),
+        ],
+      ),
     );
+  }
+
+  Future<void> _edit(BuildContext context) async {
+    await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => ProgressEntryForm(taskId: taskId, entry: entry),
+    );
+  }
+
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete this progress entry?'),
+        content: const Text('This progress entry will be permanently removed.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final deleteEntry = await ref.read(
+        deleteProgressEntryUseCaseProvider.future,
+      );
+      final deleted = await deleteEntry(entry.id);
+      if (!context.mounted || deleted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This progress entry was already deleted.'),
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete progress: $error')),
+      );
+    }
   }
 }
