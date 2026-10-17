@@ -347,64 +347,69 @@ These are starting indexes, to be confirmed against query plans and production-l
 
 ### 5.3 Local SQLite schema
 
-The client stores the same task/progress fields plus local synchronization metadata:
+M2 schema version 1 contains four tables. `local_profiles` owns each local profile; `local_tasks` references its profile; and `local_progress_entries` and `local_lifecycle_events` each reference both their profile and task. Deleting a profile or task cascades to its dependent records. Child tables carry `profile_id` as well as `task_id`, and a composite task/profile foreign key prevents a child row from being attached to a task from another profile.
+
+Store task calendar dates as ISO `YYYY-MM-DD` text, effort as integer hundredths of an hour, and UTC event times as integer Unix timestamps through Drift's `DateTimeColumn`. Profile-scoped indexes support the Today/Later and per-task history queries. Turn SQLite foreign-key enforcement on whenever the database connection opens.
+
+Sync outbox and cursor tables are deferred to M5, when sync behavior is implemented. They are not part of the M2 guest-only database schema.
 
 ```text
+local_profiles(
+  id TEXT PRIMARY KEY,
+  profile_type TEXT NOT NULL,           -- GUEST/ACCOUNT
+  created_at_utc INTEGER NOT NULL,
+  updated_at_utc INTEGER NOT NULL
+)
+
 local_tasks(
   id TEXT PRIMARY KEY,
-  profile_id TEXT NOT NULL,
+  profile_id TEXT NOT NULL REFERENCES local_profiles(id) ON DELETE CASCADE,
   topic TEXT NOT NULL,
   subtopic TEXT NULL,
   description TEXT NULL,
   start_date TEXT NOT NULL,             -- ISO YYYY-MM-DD
   planned_end_date TEXT NOT NULL,
   maximum_end_date TEXT NULL,
-  effort_hours TEXT NOT NULL,           -- decimal string to avoid float loss
+  effort_hundredths INTEGER NOT NULL,
   status TEXT NOT NULL,
-  completed_at_utc TEXT NULL,
-  server_row_version INTEGER NULL,
-  field_versions_json TEXT NOT NULL,
-  sync_state TEXT NOT NULL,             -- LOCAL_ONLY/PENDING/SYNCED/CONFLICT
-  created_at_utc TEXT NOT NULL,
-  updated_at_utc TEXT NOT NULL
+  completed_at_utc INTEGER NULL,
+  created_at_utc INTEGER NOT NULL,
+  updated_at_utc INTEGER NOT NULL,
+  UNIQUE(id, profile_id)
 )
 
-local_progress_logs(
+local_progress_entries(
   id TEXT PRIMARY KEY,
-  profile_id TEXT NOT NULL,
+  profile_id TEXT NOT NULL REFERENCES local_profiles(id) ON DELETE CASCADE,
   task_id TEXT NOT NULL,
   method TEXT NOT NULL,
-  percent_complete TEXT NULL,
-  completed_units TEXT NULL,
-  total_units TEXT NULL,
+  percent_complete INTEGER NULL,
+  completed_units INTEGER NULL,
+  total_units INTEGER NULL,
   note TEXT NULL,
-  occurred_at_utc TEXT NOT NULL,
-  server_version INTEGER NULL,
-  sync_state TEXT NOT NULL
+  occurred_at_utc INTEGER NOT NULL,
+  created_at_utc INTEGER NOT NULL,
+  updated_at_utc INTEGER NOT NULL,
+  FOREIGN KEY(task_id, profile_id) REFERENCES local_tasks(id, profile_id) ON DELETE CASCADE
 )
 
-outbox_mutations(
-  mutation_id TEXT PRIMARY KEY,
-  profile_id TEXT NOT NULL,
-  resource_type TEXT NOT NULL,
-  resource_id TEXT NOT NULL,
-  operation TEXT NOT NULL,
-  payload_json TEXT NOT NULL,
-  base_row_version INTEGER NULL,
-  base_field_versions_json TEXT NOT NULL,
-  attempt_count INTEGER NOT NULL DEFAULT 0,
-  next_attempt_at_utc TEXT NULL,
-  created_at_utc TEXT NOT NULL
+local_lifecycle_events(
+  id TEXT PRIMARY KEY,
+  profile_id TEXT NOT NULL REFERENCES local_profiles(id) ON DELETE CASCADE,
+  task_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,              -- COMPLETED/REOPENED
+  occurred_at_utc INTEGER NOT NULL,
+  FOREIGN KEY(task_id, profile_id) REFERENCES local_tasks(id, profile_id) ON DELETE CASCADE
 )
 
-sync_state(
-  profile_id TEXT PRIMARY KEY,
-  last_change_cursor TEXT NULL,
-  last_successful_sync_utc TEXT NULL
+Indexes:
+  local_tasks(profile_id, start_date, status)
+  local_progress_entries(profile_id, task_id, occurred_at_utc)
+  local_lifecycle_events(profile_id, task_id, occurred_at_utc)
 )
 ```
 
-Use a SQLite transaction for each local task mutation and corresponding outbox insert, so a saved task cannot be missing its sync operation. Use database migrations with a monotonically increasing schema version. Keep guest and account records partitioned by `profile_id`; switching profiles must never query across profiles.
+Use a SQLite transaction for each task mutation and its associated progress or lifecycle record when they must be atomic. Use database migrations with a monotonically increasing schema version. Keep guest and account records partitioned by `profile_id`; switching profiles must never query across profiles.
 
 ## 6. API contracts
 

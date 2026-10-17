@@ -19,9 +19,9 @@ The M2 boundary is the local guest experience. It does not add sign-in, a task A
 | Flutter dependency for state management | Started | Riverpod is in `pubspec.yaml` and its resolved versions are in `pubspec.lock`. |
 | App bootstrap | Complete | `ProviderScope` is the Riverpod root. |
 | App shell and navigation | First pass complete | Material 3 theme and Today/Later/Completed navigation with empty states are implemented. |
-| Guest profile | Not started | A stable local profile boundary is needed even before accounts exist. |
+| Guest profile | Implemented foundation | `LocalProfileStore` creates or reuses a UUID-backed guest profile; task, progress, and lifecycle repository providers use it to scope local operations. Screens do not consume repositories yet. |
 | Task domain model and validation | Implemented | `Task`, `ProgressEntry`, `LifecycleEvent`, `TaskDate`, and reusable rules match the LLD; Flutter analysis passed on 16 October 2026. |
-| Encrypted local persistence | Package setup in progress | Drift/SQLite3MultipleCiphers and secure-storage dependencies/build hook are selected; schema, key lifecycle, and repository remain to implement. |
+| Encrypted local persistence | Repository foundation implemented | Encrypted Drift connection, version-1 tables, database/profile providers, and profile-scoped task/progress CRUD plus atomic completion/reopen history operations exist. Screen integration and runtime persistence checks remain. |
 | Task lists and task journeys | Not started | Create, view, edit, delete, progress, complete, reopen, and list behavior remain. |
 | Automated tests | Not part of the current work agreement | Do not add or run tests unless the owner asks. Use the agreed analysis/build/manual checks and explain any verification limitation. |
 
@@ -102,12 +102,15 @@ Work is split into small code batches. Before each batch, explain the files and 
 
 **Planned work:**
 
-1. Use the selected compatible stable packages: Drift 2.35.2, drift_flutter 0.3.1, sqlite3 3.7.1, flutter_secure_storage 11.2.0, path 1.9.1, path_provider 2.1.6, drift_dev 2.35.1, and build_runner 2.16.2. `pubspec.lock` pins the resolved versions. The `sqlite3` build hook selects SQLite3MultipleCiphers (`source: sqlite3mc`); its default cipher is sqleet ChaCha20-Poly1305. The project includes its MIT license notice in the future app license screen.
-2. Define versioned local tables for profile, task, progress entries, and lifecycle events. Preserve original planned dates and event timestamps.
-3. Generate Drift code as a documented build step, and add an initial local schema migration.
+1. Use the selected compatible stable packages: Drift 2.35.2, drift_flutter 0.3.1, sqlite3 3.7.1, flutter_secure_storage 11.2.0, path 1.9.1, path_provider 2.1.6, uuid 4.6.0, drift_dev 2.35.1, and build_runner 2.16.2. `pubspec.lock` pins the resolved versions. The `sqlite3` build hook selects SQLite3MultipleCiphers (`source: sqlite3mc`); its default cipher is sqleet ChaCha20-Poly1305. The project includes its MIT license notice in the future app license screen.
+2. Define versioned local tables for profile, task, progress entries, and lifecycle events. Preserve original planned dates and event timestamps. Schema version 1 is implemented; sync outbox/cursor tables are deferred to M5.
+3. Generate Drift code with `dart run build_runner build`; create all version-1 tables on a new database and enable SQLite foreign keys whenever it opens.
 4. Generate a cryptographically random database encryption key and retrieve it through platform secure storage; do not hard-code or log it. If the key is missing or secure storage was reset, fail closed and explain that the local database cannot be opened; never silently replace the key and present unreadable guest data as an empty database.
-5. Add repository methods for task and history operations. Save a task mutation and its related lifecycle/history changes in a database transaction where they must be atomic.
-6. Scope reads and writes by local profile ID in the repository.
+5. Task repository supports profile-scoped create/read/watch/update/delete. Updates preserve lifecycle state; deletes rely on foreign-key cascades.
+6. Progress repository supports profile-scoped create/read/watch/update/delete; validate each entry with `TaskRules` and keep its task association fixed during correction.
+7. Lifecycle repository supports profile-scoped completion and reopening; each status update and lifecycle event is saved in one transaction and validated through `TaskRules`.
+8. Scope every task, progress, and lifecycle operation by the active local profile ID.
+9. Implemented: create or retrieve the stable guest profile in a transaction and expose the initialized database and profile-scoped task, progress, and lifecycle repositories through Riverpod providers.
 
 **What you learn:** Drift maps typed Dart code to SQLite tables and queries. A database migration changes a user's local schema safely as the app evolves. Encryption protects the database file at rest; secure storage protects the key. A repository hides the storage mechanism from UI code, which makes future remote sync easier to add.
 
@@ -151,12 +154,14 @@ Work is split into small code batches. Before each batch, explain the files and 
 
 **Goal:** Preserve the user's work history while making partial progress and full completion distinct actions.
 
-**Planned work:**
+**Repository foundation implemented; UI and journey verification remain.** Completion/reopening is recorded atomically with current task status, and the repository exposes ordered lifecycle history.
+
+**Remaining work:**
 
 1. Add task detail history and the three mutually exclusive progress-entry forms.
 2. Validate and persist each entry with a stable ID and occurrence time; allow multiple entries over time.
 3. Add correction and deletion of an erroneous progress entry.
-4. Add a separate Full Complete action that records a lifecycle event and moves the task to Completed.
+4. Add a separate Full Complete action that calls the lifecycle repository and moves the task to Completed.
 5. Add reopen action for completed tasks; retain the prior completion event in history.
 6. Ensure a 100% partial progress entry leaves status OPEN until the user separately chooses Full Complete.
 
