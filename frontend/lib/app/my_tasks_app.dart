@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_shell.dart';
+import 'reminder_reconciliation_observer.dart';
 
 class MyTasksApp extends StatelessWidget {
   const MyTasksApp({super.key});
@@ -26,7 +27,7 @@ class MyTasksApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const AppShell(),
+      home: const ReminderReconciliationObserver(child: AppShell()),
     );
   }
 }

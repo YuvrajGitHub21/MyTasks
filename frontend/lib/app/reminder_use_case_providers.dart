@@ -1,12 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../application/reminders/calculate_desired_reminders.dart';
+import '../application/reminders/reconcile_reminders.dart';
 import '../application/reminders/reminder_clock.dart';
 import '../application/reminders/save_reminder_preferences.dart';
 import '../data/local/database_providers.dart';
 import '../data/local/progress_repository_provider.dart';
 import '../data/local/reminder_repository_providers.dart';
 import '../data/local/task_repository_provider.dart';
+import '../data/notifications/flutter_local_notification_scheduler.dart';
+import '../domain/services/notification_scheduler.dart';
 
 /// One clock instance is shared by reminder use cases in this provider scope.
 final reminderClockProvider = Provider<ReminderClock>(
@@ -45,3 +49,30 @@ final saveReminderPreferencesProvider = FutureProvider<SaveReminderPreferences>(
     );
   },
 );
+
+/// Connects the OS plugin adapter to the profile-scoped reminder ledger.
+final notificationSchedulerProvider = FutureProvider<NotificationScheduler>((
+  ref,
+) async {
+  final repository = await ref.watch(
+    scheduledReminderRepositoryProvider.future,
+  );
+  return FlutterLocalNotificationScheduler(
+    plugin: FlutterLocalNotificationsPlugin(),
+    repository: repository,
+  );
+});
+
+/// Composes the reminder calculation and OS scheduling ports into one action.
+final reconcileRemindersProvider = FutureProvider<ReconcileReminders>((
+  ref,
+) async {
+  final calculateDesired = await ref.watch(
+    calculateDesiredRemindersProvider.future,
+  );
+  final scheduler = await ref.watch(notificationSchedulerProvider.future);
+  return ReconcileReminders(
+    calculateDesired: calculateDesired,
+    scheduler: scheduler,
+  );
+});

@@ -144,6 +144,20 @@ Still remaining in M3-C: wire a notification-tap callback to app navigation and 
 
 **Channel and delegate verification (18 October 2026):** The Android debug APK rebuilt successfully after channel creation was added. This confirms Android compilation of the channel setup. The iOS delegate edit could not be compiled in the Windows environment; verify it on macOS/Xcode before claiming iOS support.
 
+The `FlutterLocalNotificationScheduler` adapter now maps reminder requests to generic, privacy-safe notification text, converts each UTC instant to an `Asia/Kolkata` zoned time, schedules with Android's inexact-while-idle mode, and uses stable IDs from the encrypted Drift ledger. It cancels obsolete OS notifications before removing their ledger rows, so failed cancellation can be retried. Riverpod exposes the scheduler and `ReconcileReminders` use case together. The adapter currently follows system sound/vibration settings; saved sound/vibration preferences are not applied yet.
+
+Task create, edit, and delete, progress create/edit/delete, and task complete/reopen use cases now accept an application-owned change callback supplied by the Riverpod composition root. After a successful database write, it recalculates and replaces that profile's reminder schedule. Validation failures and no-op updates/deletes/transitions do not reconcile. Reminder/plugin failures are caught and logged so a committed user action is still reported as successful; the app does not yet have a centralized logging service. App startup/resume reconciliation and reminder-settings triggers remain to be wired.
+
+`ReminderReconciliationObserver` now runs one reconciliation after the first app frame and whenever the app resumes. It serializes overlapping requests and repeats once if another resume occurs during a reconciliation. Profile/database/plugin failures are logged as best-effort reminder errors and do not block task navigation.
+
+**Task-mutation verification (18 October 2026):** `flutter build apk --debug --no-pub` succeeded after the callback wiring was formatted, producing `frontend/build/app/outputs/flutter-apk/app-debug.apk`. This confirms Android compilation only. No automated tests or physical-device reminder checks were run.
+
+**Progress/lifecycle verification (18 October 2026):** `flutter build apk --debug --no-pub` succeeded after progress and completion/reopen callbacks were wired. This confirms Android compilation only; no automated tests or physical-device reminder checks were run.
+
+**Startup/resume verification (18 October 2026):** `flutter build apk --debug --no-pub` succeeded after adding the reconciliation observer. This confirms Android compilation only; lifecycle behavior and actual notification delivery were not manually verified on a device.
+
+**Adapter verification (18 October 2026):** `flutter build apk --debug --no-pub` succeeded after formatting and the adapter syntax correction, producing `frontend/build/app/outputs/flutter-apk/app-debug.apk`. This confirms Android compilation only. No automated tests or device notification delivery checks were run.
+
 **Verification (18 October 2026):** `flutter pub get` resolved the dependencies successfully, and `flutter build apk --debug --no-pub` completed successfully with the project JDK 25 and produced `frontend/build/app/outputs/flutter-apk/app-debug.apk`. The first Android build took about 4.5 minutes while Gradle initialized/downloaded dependencies. No automated tests were run. This confirms Android compilation of the plugin/platform setup; it does not yet prove notification delivery or reboot recovery on a device.
 
 **Learning:** Flutter plugins bridge Dart code to native Android/iOS APIs. Android notification channels are created once and users control their sound/visibility settings. Desugaring backports selected Java library APIs for older Android versions; it is separate from the Java runtime used by Gradle.

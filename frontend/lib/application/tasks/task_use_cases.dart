@@ -6,14 +6,20 @@ import '../../domain/rules/task_rules.dart';
 
 /// Application action for creating a task after checking domain constraints.
 final class CreateTask {
-  CreateTask(this._tasks, this._profileId, {DateTime Function()? clock})
-    : _clock = clock ?? DateTime.now;
+  CreateTask(
+    this._tasks,
+    this._profileId, {
+    DateTime Function()? clock,
+    Future<void> Function()? onChanged,
+  }) : _clock = clock ?? DateTime.now,
+       _onChanged = onChanged;
 
   static const _uuid = Uuid();
 
   final TaskRepository _tasks;
   final String _profileId;
   final DateTime Function() _clock;
+  final Future<void> Function()? _onChanged;
 
   Future<Task> call(CreateTaskInput input) async {
     final errors = TaskRules.validateTask(
@@ -43,6 +49,7 @@ final class CreateTask {
       updatedAt: now,
     );
     await _tasks.createTask(task);
+    await _onChanged?.call();
     return task;
   }
 
@@ -84,11 +91,16 @@ final class GetTask {
 
 /// Application action for changing editable fields on an existing task.
 final class UpdateTask {
-  UpdateTask(this._tasks, {DateTime Function()? clock})
-    : _clock = clock ?? DateTime.now;
+  UpdateTask(
+    this._tasks, {
+    DateTime Function()? clock,
+    Future<void> Function()? onChanged,
+  }) : _clock = clock ?? DateTime.now,
+       _onChanged = onChanged;
 
   final TaskRepository _tasks;
   final DateTime Function() _clock;
+  final Future<void> Function()? _onChanged;
 
   Future<bool> call(UpdateTaskInput input) async {
     final current = await _tasks.getTask(input.taskId);
@@ -120,7 +132,9 @@ final class UpdateTask {
       createdAt: current.createdAt,
       updatedAt: _clock().toUtc(),
     );
-    return _tasks.updateTask(updatedTask);
+    final updated = await _tasks.updateTask(updatedTask);
+    if (updated) await _onChanged?.call();
+    return updated;
   }
 
   String? _optionalText(String? value) {
@@ -153,11 +167,16 @@ final class UpdateTaskInput {
 
 /// Application action for deleting a task and its dependent history.
 final class DeleteTask {
-  const DeleteTask(this._tasks);
+  const DeleteTask(this._tasks, {this._onChanged});
 
   final TaskRepository _tasks;
+  final Future<void> Function()? _onChanged;
 
-  Future<bool> call(String taskId) => _tasks.deleteTask(taskId);
+  Future<bool> call(String taskId) async {
+    final deleted = await _tasks.deleteTask(taskId);
+    if (deleted) await _onChanged?.call();
+    return deleted;
+  }
 }
 
 /// Application query that returns tasks for one of the three primary views.

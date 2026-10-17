@@ -7,12 +7,17 @@ import '../application/tasks/task_use_cases.dart';
 import '../data/local/database_providers.dart';
 import '../data/local/task_repository_provider.dart';
 import '../domain/entities/task.dart';
+import 'reminder_reconciliation_callbacks.dart';
 
 /// Composition root: connects application actions to outer data adapters.
 final createTaskUseCaseProvider = FutureProvider<CreateTask>((ref) async {
   final repository = await ref.watch(taskRepositoryProvider.future);
   final profile = await ref.watch(activeProfileProvider.future);
-  return CreateTask(repository, profile.id);
+  return CreateTask(
+    repository,
+    profile.id,
+    onChanged: () => reconcileRemindersAfterChange(ref, profile.id),
+  );
 });
 
 final watchTasksUseCaseProvider = FutureProvider<WatchTasksByCategory>((
@@ -29,12 +34,20 @@ final getTaskUseCaseProvider = FutureProvider<GetTask>((ref) async {
 
 final updateTaskUseCaseProvider = FutureProvider<UpdateTask>((ref) async {
   final repository = await ref.watch(taskRepositoryProvider.future);
-  return UpdateTask(repository);
+  final profile = await ref.watch(activeProfileProvider.future);
+  return UpdateTask(
+    repository,
+    onChanged: () => reconcileRemindersAfterChange(ref, profile.id),
+  );
 });
 
 final deleteTaskUseCaseProvider = FutureProvider<DeleteTask>((ref) async {
   final repository = await ref.watch(taskRepositoryProvider.future);
-  return DeleteTask(repository);
+  final profile = await ref.watch(activeProfileProvider.future);
+  return DeleteTask(
+    repository,
+    onChanged: () => reconcileRemindersAfterChange(ref, profile.id),
+  );
 });
 
 final taskDetailsProvider = FutureProvider.family<Task?, String>((

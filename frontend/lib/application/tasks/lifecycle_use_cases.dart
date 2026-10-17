@@ -9,13 +9,16 @@ final class TaskLifecycleActions {
     this._lifecycle,
     this._profileId, {
     DateTime Function()? clock,
-  }) : _clock = clock ?? DateTime.now;
+    Future<void> Function()? onChanged,
+  }) : _clock = clock ?? DateTime.now,
+       _onChanged = onChanged;
 
   static const _uuid = Uuid();
 
   final LifecycleRepository _lifecycle;
   final String _profileId;
   final DateTime Function() _clock;
+  final Future<void> Function()? _onChanged;
 
   Future<bool> completeTask(String taskId) =>
       _record(taskId, LifecycleEventType.completed);
@@ -23,7 +26,7 @@ final class TaskLifecycleActions {
   Future<bool> reopenTask(String taskId) =>
       _record(taskId, LifecycleEventType.reopened);
 
-  Future<bool> _record(String taskId, LifecycleEventType type) {
+  Future<bool> _record(String taskId, LifecycleEventType type) async {
     final event = LifecycleEvent(
       id: _uuid.v4(),
       taskId: taskId,
@@ -31,7 +34,9 @@ final class TaskLifecycleActions {
       type: type,
       occurredAt: _clock().toUtc(),
     );
-    return _lifecycle.recordTransition(event);
+    final changed = await _lifecycle.recordTransition(event);
+    if (changed) await _onChanged?.call();
+    return changed;
   }
 }
 

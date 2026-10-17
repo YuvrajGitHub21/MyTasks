@@ -6,14 +6,20 @@ import '../../domain/rules/task_rules.dart';
 
 /// Application action that validates and records one partial-progress event.
 final class RecordProgress {
-  RecordProgress(this._progress, this._profileId, {DateTime Function()? clock})
-    : _clock = clock ?? DateTime.now;
+  RecordProgress(
+    this._progress,
+    this._profileId, {
+    DateTime Function()? clock,
+    Future<void> Function()? onChanged,
+  }) : _clock = clock ?? DateTime.now,
+       _onChanged = onChanged;
 
   static const _uuid = Uuid();
 
   final ProgressRepository _progress;
   final String _profileId;
   final DateTime Function() _clock;
+  final Future<void> Function()? _onChanged;
 
   Future<ProgressEntry> call(RecordProgressInput input) async {
     final now = _clock().toUtc();
@@ -37,6 +43,7 @@ final class RecordProgress {
     if (errors.isNotEmpty) throw ProgressValidationException(errors);
 
     await _progress.createEntry(entry);
+    await _onChanged?.call();
     return entry;
   }
 }
@@ -53,23 +60,31 @@ final class WatchProgressHistory {
 
 /// Application action for correcting an existing progress entry.
 final class CorrectProgressEntry {
-  const CorrectProgressEntry(this._progress);
+  const CorrectProgressEntry(this._progress, {this._onChanged});
 
   final ProgressRepository _progress;
+  final Future<void> Function()? _onChanged;
 
   Future<bool> call(ProgressEntry entry) async {
     final errors = TaskRules.validateProgress(entry);
     if (errors.isNotEmpty) throw ProgressValidationException(errors);
-    return _progress.updateEntry(entry);
+    final updated = await _progress.updateEntry(entry);
+    if (updated) await _onChanged?.call();
+    return updated;
   }
 }
 
 final class DeleteProgressEntry {
-  const DeleteProgressEntry(this._progress);
+  const DeleteProgressEntry(this._progress, {this._onChanged});
 
   final ProgressRepository _progress;
+  final Future<void> Function()? _onChanged;
 
-  Future<bool> call(String entryId) => _progress.deleteEntry(entryId);
+  Future<bool> call(String entryId) async {
+    final deleted = await _progress.deleteEntry(entryId);
+    if (deleted) await _onChanged?.call();
+    return deleted;
+  }
 }
 
 /// Input from presentation for a new progress event; IDs and ownership stay

@@ -4,6 +4,7 @@ import '../application/progress/progress_use_cases.dart';
 import '../data/local/database_providers.dart';
 import '../data/local/progress_repository_provider.dart';
 import '../domain/entities/progress_entry.dart';
+import 'reminder_reconciliation_callbacks.dart';
 
 /// Composition root for progress actions and queries.
 final recordProgressUseCaseProvider = FutureProvider<RecordProgress>((
@@ -11,7 +12,11 @@ final recordProgressUseCaseProvider = FutureProvider<RecordProgress>((
 ) async {
   final repository = await ref.watch(progressRepositoryProvider.future);
   final profile = await ref.watch(activeProfileProvider.future);
-  return RecordProgress(repository, profile.id);
+  return RecordProgress(
+    repository,
+    profile.id,
+    onChanged: () => reconcileRemindersAfterChange(ref, profile.id),
+  );
 });
 
 final watchProgressHistoryUseCaseProvider =
@@ -31,12 +36,20 @@ final progressHistoryProvider =
 final correctProgressEntryUseCaseProvider =
     FutureProvider<CorrectProgressEntry>((ref) async {
       final repository = await ref.watch(progressRepositoryProvider.future);
-      return CorrectProgressEntry(repository);
+      final profile = await ref.watch(activeProfileProvider.future);
+      return CorrectProgressEntry(
+        repository,
+        onChanged: () => reconcileRemindersAfterChange(ref, profile.id),
+      );
     });
 
 final deleteProgressEntryUseCaseProvider = FutureProvider<DeleteProgressEntry>((
   ref,
 ) async {
   final repository = await ref.watch(progressRepositoryProvider.future);
-  return DeleteProgressEntry(repository);
+  final profile = await ref.watch(activeProfileProvider.future);
+  return DeleteProgressEntry(
+    repository,
+    onChanged: () => reconcileRemindersAfterChange(ref, profile.id),
+  );
 });

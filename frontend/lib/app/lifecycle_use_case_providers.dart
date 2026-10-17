@@ -4,6 +4,7 @@ import '../application/tasks/lifecycle_use_cases.dart';
 import '../data/local/database_providers.dart';
 import '../data/local/lifecycle_repository_provider.dart';
 import '../domain/entities/lifecycle_event.dart';
+import 'reminder_reconciliation_callbacks.dart';
 
 /// Composition root for task completion, reopening, and lifecycle history.
 final taskLifecycleActionsProvider = FutureProvider<TaskLifecycleActions>((
@@ -11,7 +12,11 @@ final taskLifecycleActionsProvider = FutureProvider<TaskLifecycleActions>((
 ) async {
   final repository = await ref.watch(lifecycleRepositoryProvider.future);
   final profile = await ref.watch(activeProfileProvider.future);
-  return TaskLifecycleActions(repository, profile.id);
+  return TaskLifecycleActions(
+    repository,
+    profile.id,
+    onChanged: () => reconcileRemindersAfterChange(ref, profile.id),
+  );
 });
 
 final watchTaskLifecycleHistoryUseCaseProvider =
