@@ -73,6 +73,93 @@ final class CreateTaskInput {
   final String effortInput;
 }
 
+/// Application query for opening a task's details without exposing storage.
+final class GetTask {
+  const GetTask(this._tasks);
+
+  final TaskRepository _tasks;
+
+  Future<Task?> call(String taskId) => _tasks.getTask(taskId);
+}
+
+/// Application action for changing editable fields on an existing task.
+final class UpdateTask {
+  UpdateTask(this._tasks, {DateTime Function()? clock})
+    : _clock = clock ?? DateTime.now;
+
+  final TaskRepository _tasks;
+  final DateTime Function() _clock;
+
+  Future<bool> call(UpdateTaskInput input) async {
+    final current = await _tasks.getTask(input.taskId);
+    if (current == null) return false;
+
+    final errors = TaskRules.validateTask(
+      topic: input.topic,
+      subtopic: input.subtopic,
+      description: input.description,
+      startDate: input.startDate,
+      plannedEndDate: input.plannedEndDate,
+      maximumEndDate: input.maximumEndDate,
+      effortInput: input.effortInput,
+    );
+    if (errors.isNotEmpty) throw TaskValidationException(errors);
+
+    final updatedTask = Task(
+      id: current.id,
+      profileId: current.profileId,
+      topic: input.topic.trim(),
+      subtopic: _optionalText(input.subtopic),
+      description: _optionalText(input.description),
+      startDate: input.startDate!,
+      plannedEndDate: input.plannedEndDate!,
+      maximumEndDate: input.maximumEndDate,
+      effortHundredths: TaskRules.effortHundredthsFromInput(input.effortInput)!,
+      status: current.status,
+      completedAt: current.completedAt,
+      createdAt: current.createdAt,
+      updatedAt: _clock().toUtc(),
+    );
+    return _tasks.updateTask(updatedTask);
+  }
+
+  String? _optionalText(String? value) {
+    final trimmed = value?.trim() ?? '';
+    return trimmed.isEmpty ? null : trimmed;
+  }
+}
+
+final class UpdateTaskInput {
+  const UpdateTaskInput({
+    required this.taskId,
+    required this.topic,
+    this.subtopic,
+    this.description,
+    required this.startDate,
+    required this.plannedEndDate,
+    this.maximumEndDate,
+    required this.effortInput,
+  });
+
+  final String taskId;
+  final String topic;
+  final String? subtopic;
+  final String? description;
+  final TaskDate? startDate;
+  final TaskDate? plannedEndDate;
+  final TaskDate? maximumEndDate;
+  final String effortInput;
+}
+
+/// Application action for deleting a task and its dependent history.
+final class DeleteTask {
+  const DeleteTask(this._tasks);
+
+  final TaskRepository _tasks;
+
+  Future<bool> call(String taskId) => _tasks.deleteTask(taskId);
+}
+
 /// Application query that returns tasks for one of the three primary views.
 final class WatchTasksByCategory {
   const WatchTasksByCategory(this._tasks);

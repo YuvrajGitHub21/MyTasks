@@ -19,6 +19,29 @@ final watchTasksUseCaseProvider = FutureProvider<WatchTasksByCategory>((
   return WatchTasksByCategory(repository);
 });
 
+final getTaskUseCaseProvider = FutureProvider<GetTask>((ref) async {
+  final repository = await ref.watch(taskRepositoryProvider.future);
+  return GetTask(repository);
+});
+
+final updateTaskUseCaseProvider = FutureProvider<UpdateTask>((ref) async {
+  final repository = await ref.watch(taskRepositoryProvider.future);
+  return UpdateTask(repository);
+});
+
+final deleteTaskUseCaseProvider = FutureProvider<DeleteTask>((ref) async {
+  final repository = await ref.watch(taskRepositoryProvider.future);
+  return DeleteTask(repository);
+});
+
+final taskDetailsProvider = FutureProvider.family<Task?, String>((
+  ref,
+  taskId,
+) async {
+  final getTask = await ref.watch(getTaskUseCaseProvider.future);
+  return getTask(taskId);
+});
+
 /// UI-facing stream provider; data adapter details stay in this composition file.
 final taskListProvider = StreamProvider.family<List<Task>, TaskCategory>((
   ref,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/entities/task.dart';
 import '../../../domain/rules/task_rules.dart';
 import '../../../app/task_use_case_providers.dart';
+import 'task_detail_screen.dart';
 
 /// A list screen derives its rows from repository data and today's IST date.
 class TaskListScreen extends ConsumerWidget {
@@ -57,8 +58,15 @@ class TaskListScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
           itemCount: tasks.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (context, index) =>
-              _TaskCard(task: tasks[index], today: today),
+          itemBuilder: (context, index) => _TaskCard(
+            task: tasks[index],
+            today: today,
+            onTap: () => Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(
+                builder: (_) => TaskDetailScreen(taskId: tasks[index].id),
+              ),
+            ),
+          ),
         );
       },
     );
@@ -66,10 +74,11 @@ class TaskListScreen extends ConsumerWidget {
 }
 
 class _TaskCard extends StatelessWidget {
-  const _TaskCard({required this.task, required this.today});
+  const _TaskCard({required this.task, required this.today, this.onTap});
 
   final Task task;
   final TaskDate today;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +106,7 @@ class _TaskCard extends StatelessWidget {
             Container(width: 8, color: color),
             Expanded(
               child: ListTile(
+                onTap: onTap,
                 title: Text(task.topic),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
