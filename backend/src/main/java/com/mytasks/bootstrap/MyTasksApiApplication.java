@@ -1,4 +1,4 @@
-package com.mytasks.api;
+package com.mytasks.bootstrap;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.mytasks")
 @OpenAPIDefinition(
 		info = @Info(
 				title = "MyTasks API",

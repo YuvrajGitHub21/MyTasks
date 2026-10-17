@@ -1,44 +1,36 @@
 import 'package:drift/drift.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../domain/entities/lifecycle_event.dart';
+import '../../domain/repositories/lifecycle_repository.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/rules/task_rules.dart';
 import 'app_database.dart';
-import 'lifecycle_repository.dart';
 
 /// Drift implementation for atomic, profile-scoped lifecycle transitions.
 final class DriftLifecycleRepository implements LifecycleRepository {
   DriftLifecycleRepository(this._database, this._profileId);
 
-  static const _uuid = Uuid();
-
   final AppDatabase _database;
   final String _profileId;
 
   @override
-  Future<bool> completeTask(String taskId, DateTime occurredAt) =>
-      _transition(taskId, LifecycleEventType.completed, occurredAt);
-
-  @override
-  Future<bool> reopenTask(String taskId, DateTime occurredAt) =>
-      _transition(taskId, LifecycleEventType.reopened, occurredAt);
-
-  Future<bool> _transition(
-    String taskId,
-    LifecycleEventType eventType,
-    DateTime occurredAt,
-  ) async {
-    if (taskId.trim().isEmpty) {
-      throw ArgumentError.value(taskId, 'taskId', 'Task ID cannot be empty.');
+  Future<bool> recordTransition(LifecycleEvent event) async {
+    if (event.profileId != _profileId) {
+      throw StateError(
+        'A lifecycle event cannot be saved under a different profile.',
+      );
     }
-    final instant = occurredAt.toUtc();
+    if (event.id.trim().isEmpty || event.taskId.trim().isEmpty) {
+      throw ArgumentError('Lifecycle event ID and task ID cannot be empty.');
+    }
+    final instant = event.occurredAt.toUtc();
 
     return _database.transaction(() async {
       final task =
           await (_database.select(_database.localTasks)..where(
                 (row) =>
-                    row.id.equals(taskId) & row.profileId.equals(_profileId),
+                    row.id.equals(event.taskId) &
+                    row.profileId.equals(_profileId),
               ))
               .getSingleOrNull();
       if (task == null) return false;
@@ -46,20 +38,21 @@ final class DriftLifecycleRepository implements LifecycleRepository {
       final currentStatus = _statusFromStorage(task.status);
       final errors = TaskRules.validateLifecycleTransition(
         currentStatus: currentStatus,
-        event: eventType,
+        event: event.type,
       );
       if (errors.isNotEmpty) {
         throw StateError(errors['status']!);
       }
 
-      final nextStatus = switch (eventType) {
+      final nextStatus = switch (event.type) {
         LifecycleEventType.completed => TaskStatus.completed,
         LifecycleEventType.reopened => TaskStatus.open,
       };
       final updatedRows =
           await (_database.update(_database.localTasks)..where(
                 (row) =>
-                    row.id.equals(taskId) & row.profileId.equals(_profileId),
+                    row.id.equals(event.taskId) &
+                    row.profileId.equals(_profileId),
               ))
               .write(
                 LocalTasksCompanion(
@@ -80,10 +73,10 @@ final class DriftLifecycleRepository implements LifecycleRepository {
           .into(_database.localLifecycleEvents)
           .insert(
             LocalLifecycleEventsCompanion(
-              id: Value(_uuid.v4()),
+              id: Value(event.id),
               profileId: Value(_profileId),
-              taskId: Value(taskId),
-              eventType: Value(_eventToStorage(eventType)),
+              taskId: Value(event.taskId),
+              eventType: Value(_eventToStorage(event.type)),
               occurredAtUtc: Value(instant),
             ),
           );

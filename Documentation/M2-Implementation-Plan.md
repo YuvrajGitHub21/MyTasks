@@ -2,7 +2,7 @@
 
 **Project:** MyTasks mobile application  
 **Purpose:** Build the first useful guest experience as a local-first Flutter app.  
-**Status:** In progress — app shell batch is implemented; task data, storage, and task journeys remain.  
+**Status:** In progress — encrypted local storage and Onion boundaries are in place; task creation and the three live list views have a first UI slice. Task detail, editing, progress, completion controls, and journey verification remain.  
 **Owner:** Project owner and assistant, working in approved batches of at most five edited files.  
 **Baseline:** [FRS](FRS.md), [HLD](HLD.md), [LLD](LLD.md), [Implementation Roadmap](Implementation-Roadmap.md), [UI flows and wireframes](UI-Flow-and-Wireframe.md), and [Working Agreement](Working-Agreement.md).
 
@@ -18,14 +18,25 @@ The M2 boundary is the local guest experience. It does not add sign-in, a task A
 |---|---|---|
 | Flutter dependency for state management | Started | Riverpod is in `pubspec.yaml` and its resolved versions are in `pubspec.lock`. |
 | App bootstrap | Complete | `ProviderScope` is the Riverpod root. |
-| App shell and navigation | First pass complete | Material 3 theme and Today/Later/Completed navigation with empty states are implemented. |
-| Guest profile | Implemented foundation | `LocalProfileStore` creates or reuses a UUID-backed guest profile; task, progress, and lifecycle repository providers use it to scope local operations. Screens do not consume repositories yet. |
-| Task domain model and validation | Implemented | `Task`, `ProgressEntry`, `LifecycleEvent`, `TaskDate`, and reusable rules match the LLD; Flutter analysis passed on 16 October 2026. |
-| Encrypted local persistence | Repository foundation implemented | Encrypted Drift connection, version-1 tables, database/profile providers, and profile-scoped task/progress CRUD plus atomic completion/reopen history operations exist. Screen integration and runtime persistence checks remain. |
-| Task lists and task journeys | Not started | Create, view, edit, delete, progress, complete, reopen, and list behavior remain. |
+| App shell and navigation | First UI slice complete | Material 3 theme and Today/Later/Completed navigation; each view is connected to the profile-scoped task stream and create form. |
+| Guest profile | Implemented foundation | `LocalProfileStore` creates or reuses a UUID-backed guest profile; the app composition root supplies profile-scoped application actions. Screens do not import local repository providers. |
+| Onion boundaries | Implemented foundation | Task, progress, and lifecycle contracts are domain-owned; application use cases depend on those contracts; Drift repositories implement them; app-level Riverpod providers compose the outer adapters. Backend entry point and HTTP error handling are in bootstrap/adapter packages; backend feature domain/use-case code will be added with M4 features. |
+| Task domain model and validation | Implemented | `Task`, `ProgressEntry`, `LifecycleEvent`, `TaskDate`, and reusable rules match the LLD; task creation validation runs through an application use case. |
+| Encrypted local persistence | Repository foundation implemented | Encrypted Drift connection, version-1 tables, database/profile providers, and profile-scoped task/progress CRUD plus atomic completion/reopen history operations exist. Runtime persistence checks remain. |
+| Task lists and task journeys | First slice complete | Task creation and live Today/Later/Completed lists are connected. Task detail, edit/delete, progress UI, complete/reopen actions, and manual journey checks remain. |
 | Automated tests | Not part of the current work agreement | Do not add or run tests unless the owner asks. Use the agreed analysis/build/manual checks and explain any verification limitation. |
 
 The first app-shell batch changed `frontend/pubspec.yaml`, `frontend/pubspec.lock`, `frontend/lib/main.dart`, `frontend/lib/app/my_tasks_app.dart`, and `frontend/lib/app/app_shell.dart`. Flutter analysis passed and an Android debug APK built successfully after that batch. These checks verify the shell compiles; they do not verify task behavior or persistence.
+
+### Architecture boundary in M2
+
+```text
+features/tasks/presentation -> application use cases -> domain entities/rules/contracts
+app composition root -------------------------------> data adapters (outer layer)
+data/local Drift adapters --------------------------> domain repository contracts
+```
+
+Feature screens use application actions through app-level providers. Application code owns task/progress/lifecycle orchestration and generated event identity; domain owns rules and persistence contracts; Drift owns SQL and transaction details. The backend currently has bootstrap and inbound HTTP adapter foundations. Add backend domain/application packages with the first real backend feature instead of creating empty placeholder classes.
 
 ## 3. Product and technical rules M2 must preserve
 

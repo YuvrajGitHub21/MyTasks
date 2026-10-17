@@ -3,7 +3,7 @@ import 'package:drift/drift.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/rules/task_rules.dart';
 import 'app_database.dart';
-import 'task_repository.dart';
+import '../../domain/repositories/task_repository.dart';
 
 /// Drift-backed task repository. Every operation includes the active profile.
 final class DriftTaskRepository implements TaskRepository {

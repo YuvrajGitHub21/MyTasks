@@ -1,4 +1,4 @@
-package com.mytasks.api.error;
+package com.mytasks.adapters.in.http.error;
 
 import java.util.Map;
 

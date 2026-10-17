@@ -71,7 +71,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
-          <mainClass>com.mytasks.api.MyTasksApiApplication</mainClass>
+          <mainClass>com.mytasks.bootstrap.MyTasksApiApplication</mainClass>
         </configuration>
       </plugin>
     </plugins>

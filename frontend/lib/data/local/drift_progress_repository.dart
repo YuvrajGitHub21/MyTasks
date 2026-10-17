@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart';
 
 import '../../domain/entities/progress_entry.dart';
+import '../../domain/repositories/progress_repository.dart';
 import '../../domain/rules/task_rules.dart';
 import 'app_database.dart';
-import 'progress_repository.dart';
 
 /// Drift implementation for profile-scoped partial-progress history.
 final class DriftProgressRepository implements ProgressRepository {

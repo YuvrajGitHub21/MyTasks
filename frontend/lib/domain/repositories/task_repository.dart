@@ -1,8 +1,8 @@
-import '../../domain/entities/task.dart';
+import '../entities/task.dart';
 
-/// Task persistence operations scoped to exactly one local profile.
+/// Storage boundary owned by the domain and implemented by outer adapters.
 ///
-/// Implementations hide SQLite/Drift details from application and UI code.
+/// Application code depends on this contract, never on Drift or SQLite.
 abstract interface class TaskRepository {
   /// Saves a new task. A task owned by a different profile must be rejected.
   Future<void> createTask(Task task);

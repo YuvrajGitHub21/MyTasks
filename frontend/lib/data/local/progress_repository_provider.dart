@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'database_providers.dart';
 import 'drift_progress_repository.dart';
-import 'progress_repository.dart';
+import '../../domain/repositories/progress_repository.dart';
 
 /// Builds a progress repository scoped to the current guest profile.
 final progressRepositoryProvider = FutureProvider<ProgressRepository>((

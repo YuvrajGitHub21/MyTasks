@@ -1,6 +1,6 @@
-import '../../domain/entities/progress_entry.dart';
+import '../entities/progress_entry.dart';
 
-/// Persistence operations for partial-progress history in one local profile.
+/// Persistence port owned by the domain and implemented by outer adapters.
 abstract interface class ProgressRepository {
   Future<void> createEntry(ProgressEntry entry);
 

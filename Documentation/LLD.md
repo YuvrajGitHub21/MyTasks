@@ -20,6 +20,7 @@ This document turns the approved HLD into implementable modules, records, endpoi
 - Same-field divergent offline edits require explicit user resolution. Different-field edits may merge after validation.
 - Task deletion removes task history. A minimal sync tombstone exists only long enough to propagate that deletion to devices.
 - UI state management, database, API transport, notifications, and authentication are hidden behind app services/repositories.
+- Use Onion Architecture boundaries: dependencies point toward the domain; application use cases coordinate domain rules and ports; outer adapters implement those ports. Domain code must not import Flutter, Riverpod, Drift, Spring MVC, or JDBC.
 
 ## 3. Proposed module structure
 
@@ -27,9 +28,10 @@ This document turns the approved HLD into implementable modules, records, endpoi
 
 ```text
 lib/
-  app/                 app bootstrap, routes, dependency setup
+  app/                 bootstrap, routes, Riverpod composition root
+  application/         use cases, commands, and application results
   features/
-    tasks/              task list/editor/detail, task view models
+    tasks/presentation/ task list/editor/detail widgets and view models
     progress/           partial log and completion/reopen flows
     reminders/          preferences UI and schedule coordinator
     account/            guest, Google/Apple sign-in, transfer, deletion
@@ -37,7 +39,7 @@ lib/
   domain/
     entities/           Task, ProgressLog, ReminderPreferences
     rules/              date classification, validation, reminder predicates
-    repositories/       repository contracts
+    repositories/       repository contracts owned by the inner layer
   data/
     local/              SQLite DAOs and migrations
     remote/             HTTPS API client and DTOs
@@ -47,26 +49,30 @@ lib/
   shared/               errors, date/number formatting, accessibility helpers
 ```
 
-Use a presentation layer, domain rules, and data repositories. A repository coordinates local and remote sources; widgets do not issue SQL or network calls directly. Flutter's architecture guidance recommends clear UI/data layers and repositories as the source of truth for app data. [Flutter app architecture recommendations](https://docs.flutter.dev/app-architecture/recommendations)
+Dependency direction is inward: presentation calls application use cases; use cases depend on domain entities, rules, and repository contracts; data adapters implement those contracts. The app composition root is the only place that wires a use case to its concrete adapter. Widgets do not issue SQL or network calls directly. A repository coordinates local and remote sources and remains the source of truth for app data. Flutter's architecture guidance recommends clear UI/data layers and repositories. [Flutter app architecture recommendations](https://docs.flutter.dev/app-architecture/recommendations)
 
 ### 3.2 Hosted backend
 
 ```text
 server/
-  api/                  HTTP routes, authentication middleware, validation
-  modules/
-    identity/           provider token exchange, sessions, account deletion
-    tasks/              task CRUD, date classification, lifecycle transitions
-    progress/           progress log CRUD and validation
-    sync/               idempotency, versions, conflict responses, delta feed
-    devices/             device registration and push token lifecycle
-    reminders/           due checks, notification job creation
-  persistence/          repositories, SQL migrations, transaction helpers
-  worker/                queue consumers and reminder delivery
+  adapters/
+    in/http/             Spring MVC controllers and transport DTOs
+    out/persistence/     JDBC implementations, row mappers, SQL access
+    out/queue/           job queue and notification delivery adapters
+  application/
+    ports/in/            use case interfaces
+    usecases/            task, identity, progress, and sync orchestration
+    ports/out/           repository, clock, and delivery interfaces
+  domain/
+    model/               entities and value objects
+    services/            business rules and domain policies
+  bootstrap/             Spring configuration and dependency wiring
+  worker/                worker process entry point; delegates to use cases
   contracts/             OpenAPI spec, shared error codes, payload schemas
+  db/migration/          Flyway SQL migrations
 ```
 
-Deploy API and worker as separate processes from the same modular codebase initially. Keep domain services independent of Spring MVC and JDBC implementation details.
+The application use cases depend on domain types and outbound ports. HTTP controllers call inbound use cases; JDBC, queue, and provider adapters implement outbound ports. Keep domain and application packages free of Spring MVC and JDBC imports. Deploy API and worker as separate processes from the same modular codebase initially. The current backend scaffold has entry points, API error handling, configuration, and the initial migration; apply these boundaries as backend features are added rather than creating unused framework classes.
 
 ### 3.3 Selected implementation stack
 
