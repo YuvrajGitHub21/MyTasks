@@ -1,4 +1,4 @@
-// This file is resposible for creating local SqlLite database . 
+// This file is resposible for creating local SqlLite database .
 import 'package:drift/drift.dart';
 
 import 'encrypted_database_connection.dart';
@@ -34,11 +34,8 @@ class LocalTasks extends Table {
   String get tableName => 'local_tasks';
 
   TextColumn get id => text()();
-  TextColumn get profileId => text().references(
-    LocalProfiles,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get profileId =>
+      text().references(LocalProfiles, #id, onDelete: KeyAction.cascade)();
   TextColumn get topic => text()();
   TextColumn get subtopic => text().nullable()();
   TextColumn get description => text().nullable()();
@@ -84,11 +81,8 @@ class LocalProgressEntries extends Table {
   String get tableName => 'local_progress_entries';
 
   TextColumn get id => text()();
-  TextColumn get profileId => text().references(
-    LocalProfiles,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get profileId =>
+      text().references(LocalProfiles, #id, onDelete: KeyAction.cascade)();
   TextColumn get taskId => text()();
   TextColumn get method => text()();
   IntColumn get percentComplete => integer().nullable()();
@@ -127,11 +121,8 @@ class LocalLifecycleEvents extends Table {
   String get tableName => 'local_lifecycle_events';
 
   TextColumn get id => text()();
-  TextColumn get profileId => text().references(
-    LocalProfiles,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get profileId =>
+      text().references(LocalProfiles, #id, onDelete: KeyAction.cascade)();
   TextColumn get taskId => text()();
   TextColumn get eventType => text()();
   DateTimeColumn get occurredAtUtc => dateTime()();
@@ -147,12 +138,85 @@ class LocalLifecycleEvents extends Table {
   ];
 }
 
+@DataClassName('ReminderPreferenceRecord')
+class ReminderPreferences extends Table {
+  @override
+  String get tableName => 'reminder_preferences';
+
+  TextColumn get profileId =>
+      text().references(LocalProfiles, #id, onDelete: KeyAction.cascade)();
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+  IntColumn get morningTimeMinutes => integer()();
+  IntColumn get middayTimeMinutes => integer()();
+  IntColumn get endOfDayTimeMinutes => integer()();
+  IntColumn get quietHoursStartMinutes => integer().nullable()();
+  IntColumn get quietHoursEndMinutes => integer().nullable()();
+  BoolColumn get soundEnabled => boolean().withDefault(const Constant(true))();
+  BoolColumn get vibrationEnabled =>
+      boolean().withDefault(const Constant(true))();
+  DateTimeColumn get updatedAtUtc => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {profileId};
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (morning_time_minutes BETWEEN 0 AND 1439)',
+    'CHECK (midday_time_minutes BETWEEN 0 AND 1439)',
+    'CHECK (end_of_day_time_minutes BETWEEN 0 AND 1439)',
+    'CHECK (quiet_hours_start_minutes IS NULL OR '
+        'quiet_hours_start_minutes BETWEEN 0 AND 1439)',
+    'CHECK (quiet_hours_end_minutes IS NULL OR '
+        'quiet_hours_end_minutes BETWEEN 0 AND 1439)',
+    'CHECK ((quiet_hours_start_minutes IS NULL AND '
+        'quiet_hours_end_minutes IS NULL) OR '
+        '(quiet_hours_start_minutes IS NOT NULL AND '
+        'quiet_hours_end_minutes IS NOT NULL))',
+  ];
+}
+
+@DataClassName('ScheduledReminderRequestRecord')
+class ScheduledReminderRequests extends Table {
+  @override
+  String get tableName => 'scheduled_reminder_requests';
+
+  /// Logical identity is stable across retries and content changes.
+  TextColumn get identity => text()();
+  IntColumn get notificationId => integer()();
+  TextColumn get profileId =>
+      text().references(LocalProfiles, #id, onDelete: KeyAction.cascade)();
+  TextColumn get slot => text()();
+  TextColumn get contentKind => text()();
+  TextColumn get istDate => text()();
+  IntColumn get configuredTimeMinutes => integer()();
+  DateTimeColumn get scheduledAtUtc => dateTime()();
+  DateTimeColumn get updatedAtUtc => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {identity};
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {notificationId},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    "CHECK (slot IN ('morning', 'midday', 'endOfDay'))",
+    "CHECK (content_kind IN ('dailySummary', 'assignTask', 'logToday'))",
+    "CHECK (length(ist_date) = 10 AND ist_date GLOB '????-??-??')",
+    'CHECK (configured_time_minutes BETWEEN 0 AND 1439)',
+  ];
+}
+
 @DriftDatabase(
   tables: [
     LocalProfiles,
     LocalTasks,
     LocalProgressEntries,
     LocalLifecycleEvents,
+    ReminderPreferences,
+    ScheduledReminderRequests,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -166,12 +230,18 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) async {
       await migrator.createAll();
+    },
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.createTable(reminderPreferences);
+        await migrator.createTable(scheduledReminderRequests);
+      }
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON;');

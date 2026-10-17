@@ -100,6 +100,10 @@ M2 introduced Drift schema version 1. M3 adds a version-2 migration that preserv
 - `ReminderPreferences`: one row per local profile, with enabled state; no-task times; end-of-day time; optional quiet-hours start/end; sound and vibration preferences where supported; and update time. Defaults match the product decisions above.
 - `ScheduledReminderRequests`: a stable schedule identity, platform integer ID, logical slot type, content kind, IST local date, configured slot, effective scheduled instant, and update time. Add uniqueness for identity and notification ID. The table is a reconciliation ledger, not a history of reminders that were shown.
 
+**Implementation checkpoint (18 October 2026):** `AppDatabase` now declares both tables at schema version 2. The version-1 upgrade creates only these new tables, so it does not rewrite existing profile, task, progress, or lifecycle rows. Drift code generation completed for `app_database.g.dart`. Verification against a copy of a real version-1 database is still pending; do not consider M3-B complete until that migration check and schema review pass.
+
+The domain record and Drift adapters now map reminder preferences and scheduled-request identities to the version-2 tables. The schedule repository preserves notification IDs for unchanged identities and retains obsolete ledger rows until the platform adapter confirms cancellation, so a retry can still discover IDs after an interrupted reconciliation. Riverpod now wires these repositories to the encrypted database and composes the clock, calculate, and save use cases. The reconcile use case remains unwired until the OS notification adapter exists. Migration verification remains pending.
+
 Test the migration from an existing version-1 database without resetting user data. Keep all queries profile-scoped. OS pending requests and this ledger must reconcile safely after a crash between a database write and a platform plugin call.
 
 ## 5. Implementation phases and teaching checkpoints
