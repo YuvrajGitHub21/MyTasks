@@ -1,12 +1,16 @@
-﻿/// A calendar date without a time or time zone.
+/// A calendar date without a time or time zone.
 /// Task dates are interpreted in Asia/Kolkata and stored as `YYYY-MM-DD`.
 final class TaskDate implements Comparable<TaskDate> {
   const TaskDate._(this.year, this.month, this.day);
 
   factory TaskDate(int year, int month, int day) {
     final normalized = DateTime.utc(year, month, day);
-    if (normalized.year != year || normalized.month != month || normalized.day != day) {
-      throw ArgumentError('The supplied values do not form a valid calendar date.');
+    if (normalized.year != year ||
+        normalized.month != month ||
+        normalized.day != day) {
+      throw ArgumentError(
+        'The supplied values do not form a valid calendar date.',
+      );
     }
     return TaskDate._(year, month, day);
   }
@@ -35,7 +39,10 @@ final class TaskDate implements Comparable<TaskDate> {
         int.parse(match[3]!),
       );
     } on ArgumentError {
-      throw FormatException('The supplied value is not a valid calendar date.', value);
+      throw FormatException(
+        'The supplied value is not a valid calendar date.',
+        value,
+      );
     }
   }
 
@@ -64,7 +71,10 @@ final class TaskDate implements Comparable<TaskDate> {
 
   @override
   bool operator ==(Object other) =>
-      other is TaskDate && year == other.year && month == other.month && day == other.day;
+      other is TaskDate &&
+      year == other.year &&
+      month == other.month &&
+      day == other.day;
 
   @override
   int get hashCode => Object.hash(year, month, day);
@@ -74,7 +84,9 @@ final class TaskDate implements Comparable<TaskDate> {
 }
 
 enum TaskStatus { open, completed }
+
 enum TaskCategory { current, scheduled, overdue, completed }
+
 enum EffortBand { level1, level2, level3, level4, level5 }
 
 /// Current task fields. Stable IDs allow later offline synchronization.

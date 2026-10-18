@@ -19,6 +19,12 @@ class LocalNotificationInitializer {
     description: 'Reminders that help you plan and log your tasks.',
     importance: Importance.defaultImportance,
   );
+  static const _studyBreakChannel = AndroidNotificationChannel(
+    'study_breaks',
+    'Study breaks',
+    description: 'A reminder when a study break ends.',
+    importance: Importance.defaultImportance,
+  );
 
   final FlutterLocalNotificationsPlugin _plugin;
   bool _initialized = false;
@@ -74,6 +80,7 @@ class LocalNotificationInitializer {
           AndroidFlutterLocalNotificationsPlugin
         >();
     await androidPlugin?.createNotificationChannel(_androidChannel);
+    await androidPlugin?.createNotificationChannel(_studyBreakChannel);
 
     _initialized = true;
   }

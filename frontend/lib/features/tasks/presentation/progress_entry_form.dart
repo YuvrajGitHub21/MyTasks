@@ -252,7 +252,7 @@ class _ProgressEntryFormState extends ConsumerState<ProgressEntryForm> {
         _saving = false;
         _saveError = error is ProgressValidationException
             ? error.errors.values.join('\n')
-            : 'Could not save progress: $error';
+            : 'Could not save progress. Try again.';
       });
     }
   }

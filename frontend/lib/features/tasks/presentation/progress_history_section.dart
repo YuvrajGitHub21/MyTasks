@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/progress_use_case_providers.dart';
 import '../../../domain/entities/progress_entry.dart';
 import 'progress_entry_form.dart';
+import 'task_display_formatters.dart';
 
 class ProgressHistorySection extends ConsumerWidget {
   const ProgressHistorySection({required this.taskId, super.key});
@@ -30,7 +31,7 @@ class ProgressHistorySection extends ConsumerWidget {
             padding: EdgeInsets.all(16),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (error, _) => Text('Could not load progress history: $error'),
+          error: (_, _) => const Text('Could not load progress history.'),
           data: (entries) => entries.isEmpty
               ? const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
@@ -71,13 +72,7 @@ class _ProgressHistoryItem extends ConsumerWidget {
         '${entry.completedUnits} of ${entry.totalUnits} units complete',
       ProgressMethod.note => entry.note ?? 'Progress note',
     };
-    final timestamp = entry.occurredAt.toLocal();
-    final date =
-        '${timestamp.year.toString().padLeft(4, '0')}-'
-        '${timestamp.month.toString().padLeft(2, '0')}-'
-        '${timestamp.day.toString().padLeft(2, '0')} '
-        '${timestamp.hour.toString().padLeft(2, '0')}:'
-        '${timestamp.minute.toString().padLeft(2, '0')}';
+    final date = formatInstantInIst(entry.occurredAt);
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -138,10 +133,10 @@ class _ProgressHistoryItem extends ConsumerWidget {
           content: Text('This progress entry was already deleted.'),
         ),
       );
-    } catch (error) {
+    } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete progress: $error')),
+        const SnackBar(content: Text('Could not delete progress. Try again.')),
       );
     }
   }

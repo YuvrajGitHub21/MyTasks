@@ -66,11 +66,10 @@ final class FlutterNotificationPermissionGateway
   Future<bool> openSystemSettings() async =>
       await _plugin.openAppNotificationSettings() ?? false;
 
-  NotificationPermissionStatus _fromNullable(bool? enabled) => switch (
-    enabled
-  ) {
-    true => NotificationPermissionStatus.enabled,
-    false => NotificationPermissionStatus.disabled,
-    null => NotificationPermissionStatus.unavailable,
-  };
+  NotificationPermissionStatus _fromNullable(bool? enabled) =>
+      switch (enabled) {
+        true => NotificationPermissionStatus.enabled,
+        false => NotificationPermissionStatus.disabled,
+        null => NotificationPermissionStatus.unavailable,
+      };
 }

@@ -360,6 +360,18 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
             style: Theme.of(context).textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 12),
+          const AboutListTile(
+            icon: Icon(Icons.info_outline_rounded),
+            applicationName: 'MyTasks',
+            applicationLegalese:
+                'A private, local-first task and study planner.',
+            aboutBoxChildren: [
+              Text(
+                'Task and study records are stored on this device in an encrypted database.',
+              ),
+            ],
+          ),
         ],
       ),
     );

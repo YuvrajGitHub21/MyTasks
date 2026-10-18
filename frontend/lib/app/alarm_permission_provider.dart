@@ -6,9 +6,8 @@ import '../domain/services/alarm_permission_gateway.dart';
 
 /// Provides the Android-specific adapter behind the application contract.
 final alarmPermissionGatewayProvider = Provider<AlarmPermissionGateway>(
-  (ref) => FlutterAlarmPermissionGateway(
-    plugin: FlutterLocalNotificationsPlugin(),
-  ),
+  (ref) =>
+      FlutterAlarmPermissionGateway(plugin: FlutterLocalNotificationsPlugin()),
 );
 
 /// Reads exact-alarm access for display in reminder settings.

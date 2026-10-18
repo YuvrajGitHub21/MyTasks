@@ -15,25 +15,30 @@ final class LocalProfileStore {
 
   Future<ProfileRecord> getOrCreateGuestProfile() {
     return _database.transaction(() async {
-      final existing = await (_database.select(_database.localProfiles)
-            ..where((profile) => profile.profileType.equals(guestProfileType))
-            ..limit(1))
-          .getSingleOrNull();
+      final existing =
+          await (_database.select(_database.localProfiles)
+                ..where(
+                  (profile) => profile.profileType.equals(guestProfileType),
+                )
+                ..limit(1))
+              .getSingleOrNull();
       if (existing != null) return existing;
 
       final now = DateTime.now().toUtc();
       final profileId = _uuid.v4();
-      await _database.into(_database.localProfiles).insert(
-        LocalProfilesCompanion.insert(
-          id: profileId,
-          createdAtUtc: now,
-          updatedAtUtc: now,
-        ),
-      );
+      await _database
+          .into(_database.localProfiles)
+          .insert(
+            LocalProfilesCompanion.insert(
+              id: profileId,
+              createdAtUtc: now,
+              updatedAtUtc: now,
+            ),
+          );
 
-      return (_database.select(_database.localProfiles)
-            ..where((profile) => profile.id.equals(profileId)))
-          .getSingle();
+      return (_database.select(
+        _database.localProfiles,
+      )..where((profile) => profile.id.equals(profileId))).getSingle();
     });
   }
 }

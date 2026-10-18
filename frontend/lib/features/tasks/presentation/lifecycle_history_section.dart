@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/lifecycle_use_case_providers.dart';
 import '../../../domain/entities/lifecycle_event.dart';
+import 'task_display_formatters.dart';
 
 class LifecycleHistorySection extends ConsumerWidget {
   const LifecycleHistorySection({required this.taskId, super.key});
@@ -26,8 +27,7 @@ class LifecycleHistorySection extends ConsumerWidget {
             padding: EdgeInsets.all(16),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (error, _) =>
-              Text('Could not load completion history: $error'),
+          error: (_, _) => const Text('Could not load completion history.'),
           data: (events) => events.isEmpty
               ? const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
@@ -53,13 +53,7 @@ class _LifecycleHistoryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final completed = event.type == LifecycleEventType.completed;
-    final timestamp = event.occurredAt.toLocal();
-    final date =
-        '${timestamp.year.toString().padLeft(4, '0')}-'
-        '${timestamp.month.toString().padLeft(2, '0')}-'
-        '${timestamp.day.toString().padLeft(2, '0')} '
-        '${timestamp.hour.toString().padLeft(2, '0')}:'
-        '${timestamp.minute.toString().padLeft(2, '0')}';
+    final date = formatInstantInIst(event.occurredAt);
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
