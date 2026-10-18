@@ -32,7 +32,8 @@ final watchTasksUseCaseProvider = FutureProvider<WatchTasksByCategory>((
 
 final getTaskUseCaseProvider = FutureProvider<GetTask>((ref) async {
   final repository = await ref.watch(taskRepositoryProvider.future);
-  return GetTask(repository);
+  final logger = ref.watch(diagnosticLoggerProvider);
+  return GetTask(repository, logger: logger);
 });
 
 final updateTaskUseCaseProvider = FutureProvider<UpdateTask>((ref) async {

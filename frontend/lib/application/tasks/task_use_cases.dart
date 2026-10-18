@@ -92,11 +92,20 @@ final class CreateTaskInput {
 
 /// Application query for opening a task's details without exposing storage.
 final class GetTask {
-  const GetTask(this._tasks);
+  const GetTask(
+    this._tasks, {
+    this._logger = const NoopDiagnosticLogger(),
+  });
 
   final TaskRepository _tasks;
+  final DiagnosticLogger _logger;
 
-  Future<Task?> call(String taskId) => _tasks.getTask(taskId);
+  Future<Task?> call(String taskId) => runDiagnosticOperation(
+    logger: _logger,
+    feature: 'tasks',
+    eventName: 'task.read',
+    action: () => _tasks.getTask(taskId),
+  );
 }
 
 /// Application action for changing editable fields on an existing task.

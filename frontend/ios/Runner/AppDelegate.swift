@@ -24,6 +24,56 @@ import UserNotifications
     alarmKitChannel.setMethodCallHandler { call, result in
       IosAlarmKitBridge.handle(call, result: result)
     }
+    let focusDisplayChannel = FlutterMethodChannel(
+      name: "com.mytasks/focus_display",
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
+    focusDisplayChannel.setMethodCallHandler { call, result in
+      FocusDisplayBridge.handle(call, result: result)
+    }
+  }
+}
+
+private enum FocusDisplayBridge {
+  private static var savedBrightness: CGFloat?
+  private static var savedIdleTimerDisabled: Bool?
+
+  static func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    switch call.method {
+    case "enterFocus":
+      if savedBrightness == nil {
+        savedBrightness = UIScreen.main.brightness
+        savedIdleTimerDisabled = UIApplication.shared.isIdleTimerDisabled
+      }
+      UIApplication.shared.isIdleTimerDisabled = true
+      result(nil)
+    case "setFocusBrightness":
+      guard let brightness = call.arguments as? NSNumber else {
+        result(FlutterError(code: "INVALID_BRIGHTNESS", message: "Brightness value is missing.", details: nil))
+        return
+      }
+      UIScreen.main.brightness = CGFloat(brightness.doubleValue).clamped(to: 0...1)
+      result(nil)
+    case "restoreFocusBrightness":
+      if let savedBrightness { UIScreen.main.brightness = savedBrightness }
+      result(nil)
+    case "exitFocus":
+      if let savedBrightness { UIScreen.main.brightness = savedBrightness }
+      if let savedIdleTimerDisabled {
+        UIApplication.shared.isIdleTimerDisabled = savedIdleTimerDisabled
+      }
+      savedBrightness = nil
+      savedIdleTimerDisabled = nil
+      result(nil)
+    default:
+      result(FlutterMethodNotImplemented)
+    }
+  }
+}
+
+private extension CGFloat {
+  func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
+    min(max(self, range.lowerBound), range.upperBound)
   }
 }
 

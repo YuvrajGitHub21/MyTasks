@@ -32,6 +32,8 @@ final class LocalDiagnosticLogger implements DiagnosticLogger {
     'reminder.initialization.failed',
     'task.create.succeeded',
     'task.create.failed',
+    'task.read.succeeded',
+    'task.read.failed',
     'task.update.succeeded',
     'task.update.failed',
     'task.delete.succeeded',
