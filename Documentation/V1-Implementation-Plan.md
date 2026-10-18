@@ -8,13 +8,15 @@
 
 V1 should feel like one finished product: task planning, progress, local alarm reminders, and explicit study-session tracking work together, remain usable offline, and protect existing guest data. Improve the current Flutter app in place. Do not replace Flutter with a website or introduce backend dependencies.
 
-V1 does not monitor which other apps the user opens. That would require separate OS permissions/APIs and is not part of the requested stopwatch. Calendar analytics remain later scope. Keep full-screen/wake-screen alarms and volume-button snooze in the deferred alarm-improvement list; they are not prerequisites for the timer plan unless a separate product decision changes that.
+V1 does not monitor which other apps the user opens. That would require separate OS permissions/APIs and is not part of the requested stopwatch. Calendar analytics remain later scope. Full-screen/wake-screen alarm presentation and volume-button snooze remain separate alarm improvements; the Study Focus screen below applies only to an active study session.
 
 ## 2. Recommended user experience
 
 Add **Study** as a first-class destination, reachable from the main navigation without obscuring Today/Later/Completed. Before a session starts, the user chooses one of: link an existing non-completed task, create a task, or study without a task. Keep the unlinked path available for general study.
 
 The active screen shows a large elapsed-time display, linked task when present, and clear **Take a break** and **Stop session** actions. Break choices are 10 minutes, 20 minutes, or a custom duration. During a break, freeze focused-study time and show a separate countdown. When the countdown ends, alert the user; require an explicit Resume tap so break time cannot be accidentally counted as study. Stopping during a break saves only focused time.
+
+The active session can open a dedicated immersive **Study Focus** screen with a large timer and task title. The user can minimize it without ending the session. Keep the display awake only while this screen is foregrounded, and restore normal display behavior when leaving it. Offer app-window dimming with the normal brightness restored on exit or when the app is backgrounded; do not dim the whole device by default. An optional silence control is explicit and off by default: Android may create an app-owned Do Not Disturb rule after the user grants policy access, but it is best-effort and still follows system exceptions. iOS cannot be switched into system Focus by the app, so guide the user to enable Focus manually. Never promise that all calls or notifications are blocked.
 
 On stop, show a concise session summary and add a dated history entry. A linked session does not automatically change task progress; offer the existing progress flow as a separate explicit action. The study history shows daily focused total, session duration, break duration, date/time, and optional task title.
 
@@ -52,6 +54,7 @@ The break-end alert should use a scheduled local notification when permission is
 - Add Study navigation and pre-session task selection/create/unlinked choices.
 - Add active, break, recovered-session, stopped-summary, empty-history, and failure states.
 - Wire a break-end notification through the existing notification boundary; do not couple study UI directly to platform channels or SQLite.
+- Add the immersive Study Focus route with a minimize action, foreground-only keep-awake behavior, optional app-window dimming, and an explicit Android-only best-effort silence option. iOS Focus activation remains a user action in Settings/Control Center.
 
 ### V1-E — Release hardening and V1 review
 
@@ -60,6 +63,7 @@ The break-end alert should use a scheduled local notification when permission is
 - Validate iOS build and runtime behavior on macOS/Xcode; document any iOS-only limitations.
 - Review privacy notice, local-data/backup behavior, store metadata, required SDK versions, dependency licenses, and support contact before public distribution.
 - Freeze V1 scope and begin the existing M4/M5/M6 Java/backend work only as V2.
+- Provide local diagnostic records with a dedicated encrypted store, seven-day retention, and a strict size bound so support can investigate reports from other devices.
 
 ## 5. Acceptance criteria
 
@@ -70,6 +74,7 @@ The break-end alert should use a scheduled local notification when permission is
 - Break end is communicated when possible, while denied notification permission does not block timing.
 - Task, reminder, and study screens follow a consistent adapted visual system and remain accessible at larger text sizes.
 - Android acceptance is recorded on a real device. iOS acceptance requires a Mac/Xcode build and device or simulator run.
+- Diagnostic records are encrypted separately from task data, contain no task text or IDs, expire after seven days, and remain local until a future explicit export feature is reviewed.
 
 ## 6. Decisions selected for this plan
 
@@ -92,8 +97,12 @@ The implementation should teach Flutter theming and accessibility, state machine
 - **V1-B — Core visual refresh:** Implemented in code. A shared cream/coral/teal theme, four-destination navigation, revised task-list cards and states, responsive task details, human-readable IST dates, consistent forms, notification settings, progress/lifecycle history, safe user-facing error messages, and an in-app font license disclosure are in place. Screen-reader validation across every screen remains part of V1-E.
 - **V1-C — Study domain and storage:** Implemented. Drift schema version 5 adds profile-scoped study sessions and break intervals. One active session per profile is enforced in application logic and a partial unique index. Task deletion unlinks a session while retaining its history. Focus seconds are derived from UTC intervals and daily totals use the fixed IST day boundary.
 - **V1-D — Timer and task linking:** Implemented in code. The Study destination supports choosing an open task, creating a task, or starting without a task; offers 10-minute, 20-minute, and 1–240-minute custom breaks; requires explicit resume; and provides stop plus session history. Break-end alerts are ordinary scheduled notifications and require OS notification permission; denied access does not block timing. No always-running background service is used.
+- **Study Focus enhancement:** Implemented in code. An active session can open an immersive timer, minimize while keeping the session active, keep the display awake while foregrounded, and optionally dim only the app window with brightness restoration on exit/background. Android silence is a user-enabled, best-effort Do Not Disturb rule requiring system policy access; exceptions can still interrupt. iOS cannot be placed into Focus by the app, so the user must enable Focus manually. Android debug build verification is recorded for this change; iOS compilation/runtime verification remains pending because it requires macOS and Xcode.
+- **MyTasks launcher icon:** Added a checked-in 1024px master asset and generated platform-sized PNGs from the approved cream, teal, and coral task-card artwork. Android mipmap launcher sizes and all iOS AppIcon slots are populated from the same master so platform icons stay visually consistent.
+- **Study presentation cleanup:** Extracted active-session controls, task/break choices, history cards, loading/error states, and date/time formatting into dedicated presentation files. `StudyScreen` remains responsible for coordinating provider state and user actions. This is a presentation-only refactor; no domain, persistence, or session behavior was intentionally changed.
 - **Automated verification:** Domain state rules, IST midnight splitting, break exclusion, start/break/resume/stop persistence, profile isolation, task deletion unlinking, schema-upgrade preservation, empty Study UI, and large-text Study UI are covered by Flutter tests. Run `flutter test` from `frontend/`.
-- **Android build/install:** `flutter build apk --debug` completed and the APK was installed with `adb install -r` on the connected M2102J20SI. The `-r` install preserves app data. Android started the app process without a surfaced database/cipher error. The phone remained on its lock screen, so visual and tap-through checks still need the owner to unlock it.
+- **Local diagnostics:** Implemented in code with a separate SQLite3MultipleCiphers ChaCha20-Poly1305 database and independent secure-storage key. The store prunes records older than seven days and is capped at 2 MiB. Task/progress/lifecycle/reminder/study use cases emit stable success and failure events; startup, database-open, Flutter framework, and uncaught platform async failures are also captured. Focused tests cover encryption at rest, readback, pruning, key-loss preservation, queued writes, redaction, error querying, failure isolation, and the storage cap. See [Local-Logging-Design.md](Local-Logging-Design.md) for the review and Android verification record; owner walkthrough and iOS verification remain.
+- **Android build/install:** `flutter build apk --debug` completed and the APK was installed with `adb install -r` on the connected M2102J20SI. The `-r` install preserves app data. Android launched MyTasks and created the private diagnostics database with no Flutter/database/cipher startup error in the inspected logcat window. Visual and task-flow checks remain for the owner.
 - **Still needed for V1-E:** Real-device Android walkthrough of the study flow and existing task/alarm regression checks, screen-reader review of all refreshed screens, and iOS build/runtime validation on macOS with Xcode. Confirm public-release privacy, retention, store metadata, and bundled license disclosures with responsible owners before publishing.
 
 The stored times are UTC instants. The display and daily summaries use Asia/Kolkata. As with any wall-clock stopwatch, a manual device clock change can affect elapsed-time calculations; V1 does not request device-wide usage access or run a persistent study service.

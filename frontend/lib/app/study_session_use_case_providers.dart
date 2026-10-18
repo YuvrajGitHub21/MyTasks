@@ -8,6 +8,7 @@ import '../data/notifications/flutter_study_break_alert_scheduler.dart';
 import '../domain/repositories/study_session_repository.dart';
 import '../domain/entities/task.dart';
 import '../data/local/task_repository_provider.dart';
+import 'diagnostic_logger_provider.dart';
 
 final studySessionUseCasesProvider = FutureProvider<StudySessionUseCases>((
   ref,
@@ -19,6 +20,7 @@ final studySessionUseCasesProvider = FutureProvider<StudySessionUseCases>((
     database: database,
     profileId: profile.id,
   );
+  final logger = ref.watch(diagnosticLoggerProvider);
   return StudySessionUseCases(
     profileId: profile.id,
     repository: repository,
@@ -26,21 +28,25 @@ final studySessionUseCasesProvider = FutureProvider<StudySessionUseCases>((
     start: StartStudySession(
       repository: repository,
       clock: const SystemStudyClock(),
+      logger: logger,
     ),
     takeBreak: TakeStudyBreak(
       repository: repository,
       alertScheduler: scheduler,
       clock: const SystemStudyClock(),
+      logger: logger,
     ),
     resume: ResumeStudySession(
       repository: repository,
       alertScheduler: scheduler,
       clock: const SystemStudyClock(),
+      logger: logger,
     ),
     stop: StopStudySession(
       repository: repository,
       alertScheduler: scheduler,
       clock: const SystemStudyClock(),
+      logger: logger,
     ),
   );
 });

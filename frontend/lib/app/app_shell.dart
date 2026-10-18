@@ -51,26 +51,11 @@ class _AppShellState extends State<AppShell> {
 
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 92,
+        toolbarHeight: 76,
         titleSpacing: _pageGutter,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              destination.title.toUpperCase(),
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.secondary,
-                letterSpacing: 1.1,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              destination.title,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        title: Text(
+          destination.title,
+          style: Theme.of(context).textTheme.headlineMedium,
         ),
         actions: [
           Padding(
@@ -171,9 +156,6 @@ class _NavigationDestinationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final selectedColor = colors.primary == const Color(0xFFFF6B6B)
-        ? const Color(0xFFB83E45)
-        : colors.primary;
     return Semantics(
       button: true,
       selected: selected,
@@ -194,7 +176,9 @@ class _NavigationDestinationButton extends StatelessWidget {
                   Icon(
                     selected ? destination.selectedIcon : destination.icon,
                     size: 25,
-                    color: selected ? selectedColor : colors.onSurfaceVariant,
+                    color: selected
+                        ? colors.onPrimaryContainer
+                        : colors.onSurfaceVariant,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -202,7 +186,9 @@ class _NavigationDestinationButton extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: selected ? selectedColor : colors.onSurfaceVariant,
+                      color: selected
+                          ? colors.onPrimaryContainer
+                          : colors.onSurfaceVariant,
                       fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
                     ),
                   ),
