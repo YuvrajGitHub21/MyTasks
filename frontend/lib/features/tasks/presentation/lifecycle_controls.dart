@@ -74,10 +74,10 @@ class LifecycleControls extends ConsumerWidget {
           const SnackBar(content: Text('The task could not be updated.')),
         );
       }
-    } catch (error) {
+    } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not update the task: $error')),
+        const SnackBar(content: Text('Could not update the task. Try again.')),
       );
     }
   }

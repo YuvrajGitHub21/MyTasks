@@ -249,6 +249,95 @@ class SnoozedReminderRecords extends Table {
   ];
 }
 
+@DataClassName('StudySessionRecord')
+@TableIndex(
+  name: 'local_study_sessions_profile_start_idx',
+  columns: {#profileId, #startedAtUtc},
+)
+class LocalStudySessions extends Table {
+  @override
+  String get tableName => 'local_study_sessions';
+
+  TextColumn get id => text()();
+  TextColumn get profileId =>
+      text().references(LocalProfiles, #id, onDelete: KeyAction.cascade)();
+  TextColumn get taskId => text().nullable().references(
+    LocalTasks,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+  TextColumn get status => text()();
+  DateTimeColumn get startedAtUtc => dateTime()();
+  DateTimeColumn get activeFocusStartedAtUtc => dateTime().nullable()();
+  IntColumn get accumulatedFocusedSeconds =>
+      integer().withDefault(const Constant(0))();
+  DateTimeColumn get stoppedAtUtc => dateTime().nullable()();
+  IntColumn get finalFocusedSeconds => integer().nullable()();
+  DateTimeColumn get createdAtUtc => dateTime()();
+  DateTimeColumn get updatedAtUtc => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {id, profileId},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    "CHECK (status IN ('RUNNING', 'ON_BREAK', 'STOPPED'))",
+    'CHECK (accumulated_focused_seconds >= 0)',
+    'CHECK (final_focused_seconds IS NULL OR final_focused_seconds >= 0)',
+    "CHECK ((status = 'RUNNING' AND active_focus_started_at_utc IS NOT NULL "
+        'AND stopped_at_utc IS NULL AND final_focused_seconds IS NULL) OR '
+        "(status = 'ON_BREAK' AND active_focus_started_at_utc IS NULL "
+        'AND stopped_at_utc IS NULL AND final_focused_seconds IS NULL) OR '
+        "(status = 'STOPPED' AND active_focus_started_at_utc IS NULL "
+        'AND stopped_at_utc IS NOT NULL AND final_focused_seconds IS NOT NULL))',
+  ];
+}
+
+@DataClassName('StudyBreakRecord')
+@TableIndex(
+  name: 'local_study_breaks_profile_session_start_idx',
+  columns: {#profileId, #sessionId, #startedAtUtc},
+)
+class LocalStudyBreaks extends Table {
+  @override
+  String get tableName => 'local_study_breaks';
+
+  TextColumn get id => text()();
+  TextColumn get profileId =>
+      text().references(LocalProfiles, #id, onDelete: KeyAction.cascade)();
+  TextColumn get sessionId => text()();
+  DateTimeColumn get startedAtUtc => dateTime()();
+  DateTimeColumn get plannedEndAtUtc => dateTime()();
+  DateTimeColumn get endedAtUtc => dateTime().nullable()();
+
+  /// Negative IDs are reserved for study break notifications. Task reminder
+  /// IDs use the positive range, preventing accidental cross-cancellation.
+  IntColumn get notificationId => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {notificationId},
+    {id, profileId, sessionId},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (planned_end_at_utc > started_at_utc)',
+    'CHECK (ended_at_utc IS NULL OR ended_at_utc >= started_at_utc)',
+    'CHECK (notification_id BETWEEN -2147483647 AND -1)',
+    'FOREIGN KEY (session_id, profile_id) '
+        'REFERENCES local_study_sessions (id, profile_id) ON DELETE CASCADE',
+  ];
+}
+
 @DriftDatabase(
   tables: [
     LocalProfiles,
@@ -258,6 +347,8 @@ class SnoozedReminderRecords extends Table {
     ReminderPreferences,
     ScheduledReminderRequests,
     SnoozedReminderRecords,
+    LocalStudySessions,
+    LocalStudyBreaks,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -271,12 +362,13 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) async {
       await migrator.createAll();
+      await _createStudySessionIndexes();
     },
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
@@ -292,9 +384,25 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4) {
         await migrator.createTable(snoozedReminderRecords);
       }
+      if (from < 5) {
+        await migrator.createTable(localStudySessions);
+        await migrator.createTable(localStudyBreaks);
+        await _createStudySessionIndexes();
+      }
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON;');
     },
   );
+
+  Future<void> _createStudySessionIndexes() async {
+    await customStatement(
+      "CREATE UNIQUE INDEX IF NOT EXISTS local_study_one_active_per_profile_idx "
+      "ON local_study_sessions (profile_id) WHERE status IN ('RUNNING', 'ON_BREAK')",
+    );
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS local_study_one_open_break_per_session_idx '
+      'ON local_study_breaks (session_id) WHERE ended_at_utc IS NULL',
+    );
+  }
 }

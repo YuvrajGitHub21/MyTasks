@@ -1,12 +1,11 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../domain/entities/reminder_request.dart';
 import '../domain/entities/task.dart';
 import '../features/tasks/presentation/task_form_screen.dart';
 import '../features/tasks/presentation/task_list_screen.dart';
+import '../features/study/presentation/study_screen.dart';
 
 /// Converts privacy-safe notification payloads into app destinations.
 class NotificationTapRouter {
@@ -41,6 +40,7 @@ class NotificationTapRouter {
       final Widget destination = switch (contentKind) {
         'assignTask' => const TaskFormScreen(),
         'dailySummary' || 'logToday' => const _TodayReminderDestination(),
+        'studyBreak' => const StudyScreen(),
         _ => throw const FormatException('Unknown reminder content kind.'),
       };
       return MaterialPageRoute<void>(builder: (_) => destination);

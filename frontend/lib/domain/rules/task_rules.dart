@@ -1,4 +1,4 @@
-﻿import '../entities/lifecycle_event.dart';
+import '../entities/lifecycle_event.dart';
 import '../entities/progress_entry.dart';
 import '../entities/task.dart';
 
@@ -52,7 +52,8 @@ abstract final class TaskRules {
           'Enter an effort greater than 0 and no more than 99,999.99 hours.';
     } else {
       final hundredths = effortHundredthsFromInput(effort);
-      if (hundredths == null || hundredths <= 0 ||
+      if (hundredths == null ||
+          hundredths <= 0 ||
           hundredths > maximumEffortHundredths) {
         errors['effort'] =
             'Enter an effort greater than 0 and no more than 99,999.99 hours.';
@@ -93,16 +94,20 @@ abstract final class TaskRules {
       case ProgressMethod.units:
         final completed = entry.completedUnits;
         final total = entry.totalUnits;
-        if (completed == null || total == null || completed <= 0 ||
-            total <= 0 || completed > total || entry.percentComplete != null ||
+        if (completed == null ||
+            total == null ||
+            completed <= 0 ||
+            total <= 0 ||
+            completed > total ||
+            entry.percentComplete != null ||
             entry.note != null) {
-          errors['progress'] =
-              'Enter positive completed and total units. Completed units cannot exceed total units.';
+          errors['progress'] = 'Enter positive completed and total units. Completed units cannot exceed total units.';
         }
         break;
       case ProgressMethod.note:
         final note = entry.note?.trim() ?? '';
-        if (note.isEmpty || note.length > 2000 ||
+        if (note.isEmpty ||
+            note.length > 2000 ||
             entry.percentComplete != null ||
             entry.completedUnits != null ||
             entry.totalUnits != null) {
@@ -123,7 +128,9 @@ abstract final class TaskRules {
       (TaskStatus.completed, LifecycleEventType.reopened) => true,
       _ => false,
     };
-    return isValid ? const {} : {'status': 'This task status change is not valid.'};
+    return isValid
+        ? const {}
+        : {'status': 'This task status change is not valid.'};
   }
 
   /// Completed tasks are exclusive to Completed. Future open tasks are Later.
@@ -150,4 +157,3 @@ abstract final class TaskRules {
     return EffortBand.level5;
   }
 }
-

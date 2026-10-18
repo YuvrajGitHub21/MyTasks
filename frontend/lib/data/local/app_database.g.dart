@@ -4080,6 +4080,1231 @@ class SnoozedReminderRecordsCompanion
   }
 }
 
+class $LocalStudySessionsTable extends LocalStudySessions
+    with TableInfo<$LocalStudySessionsTable, StudySessionRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalStudySessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_profiles (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
+  @override
+  late final GeneratedColumn<String> taskId = GeneratedColumn<String>(
+    'task_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_tasks (id) ON DELETE SET NULL',
+    ),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtUtcMeta = const VerificationMeta(
+    'startedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAtUtc = GeneratedColumn<DateTime>(
+    'started_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activeFocusStartedAtUtcMeta =
+      const VerificationMeta('activeFocusStartedAtUtc');
+  @override
+  late final GeneratedColumn<DateTime> activeFocusStartedAtUtc =
+      GeneratedColumn<DateTime>(
+        'active_focus_started_at_utc',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _accumulatedFocusedSecondsMeta =
+      const VerificationMeta('accumulatedFocusedSeconds');
+  @override
+  late final GeneratedColumn<int> accumulatedFocusedSeconds =
+      GeneratedColumn<int>(
+        'accumulated_focused_seconds',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      );
+  static const VerificationMeta _stoppedAtUtcMeta = const VerificationMeta(
+    'stoppedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> stoppedAtUtc = GeneratedColumn<DateTime>(
+    'stopped_at_utc',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _finalFocusedSecondsMeta =
+      const VerificationMeta('finalFocusedSeconds');
+  @override
+  late final GeneratedColumn<int> finalFocusedSeconds = GeneratedColumn<int>(
+    'final_focused_seconds',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtUtcMeta = const VerificationMeta(
+    'createdAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAtUtc = GeneratedColumn<DateTime>(
+    'created_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
+    'updatedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
+    'updated_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    taskId,
+    status,
+    startedAtUtc,
+    activeFocusStartedAtUtc,
+    accumulatedFocusedSeconds,
+    stoppedAtUtc,
+    finalFocusedSeconds,
+    createdAtUtc,
+    updatedAtUtc,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_study_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StudySessionRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('task_id')) {
+      context.handle(
+        _taskIdMeta,
+        taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('started_at_utc')) {
+      context.handle(
+        _startedAtUtcMeta,
+        startedAtUtc.isAcceptableOrUnknown(
+          data['started_at_utc']!,
+          _startedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtUtcMeta);
+    }
+    if (data.containsKey('active_focus_started_at_utc')) {
+      context.handle(
+        _activeFocusStartedAtUtcMeta,
+        activeFocusStartedAtUtc.isAcceptableOrUnknown(
+          data['active_focus_started_at_utc']!,
+          _activeFocusStartedAtUtcMeta,
+        ),
+      );
+    }
+    if (data.containsKey('accumulated_focused_seconds')) {
+      context.handle(
+        _accumulatedFocusedSecondsMeta,
+        accumulatedFocusedSeconds.isAcceptableOrUnknown(
+          data['accumulated_focused_seconds']!,
+          _accumulatedFocusedSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('stopped_at_utc')) {
+      context.handle(
+        _stoppedAtUtcMeta,
+        stoppedAtUtc.isAcceptableOrUnknown(
+          data['stopped_at_utc']!,
+          _stoppedAtUtcMeta,
+        ),
+      );
+    }
+    if (data.containsKey('final_focused_seconds')) {
+      context.handle(
+        _finalFocusedSecondsMeta,
+        finalFocusedSeconds.isAcceptableOrUnknown(
+          data['final_focused_seconds']!,
+          _finalFocusedSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at_utc')) {
+      context.handle(
+        _createdAtUtcMeta,
+        createdAtUtc.isAcceptableOrUnknown(
+          data['created_at_utc']!,
+          _createdAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMeta);
+    }
+    if (data.containsKey('updated_at_utc')) {
+      context.handle(
+        _updatedAtUtcMeta,
+        updatedAtUtc.isAcceptableOrUnknown(
+          data['updated_at_utc']!,
+          _updatedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {id, profileId},
+  ];
+  @override
+  StudySessionRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StudySessionRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      taskId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_id'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      startedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at_utc'],
+      )!,
+      activeFocusStartedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}active_focus_started_at_utc'],
+      ),
+      accumulatedFocusedSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}accumulated_focused_seconds'],
+      )!,
+      stoppedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}stopped_at_utc'],
+      ),
+      finalFocusedSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}final_focused_seconds'],
+      ),
+      createdAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at_utc'],
+      )!,
+      updatedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at_utc'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalStudySessionsTable createAlias(String alias) {
+    return $LocalStudySessionsTable(attachedDatabase, alias);
+  }
+}
+
+class StudySessionRecord extends DataClass
+    implements Insertable<StudySessionRecord> {
+  final String id;
+  final String profileId;
+  final String? taskId;
+  final String status;
+  final DateTime startedAtUtc;
+  final DateTime? activeFocusStartedAtUtc;
+  final int accumulatedFocusedSeconds;
+  final DateTime? stoppedAtUtc;
+  final int? finalFocusedSeconds;
+  final DateTime createdAtUtc;
+  final DateTime updatedAtUtc;
+  const StudySessionRecord({
+    required this.id,
+    required this.profileId,
+    this.taskId,
+    required this.status,
+    required this.startedAtUtc,
+    this.activeFocusStartedAtUtc,
+    required this.accumulatedFocusedSeconds,
+    this.stoppedAtUtc,
+    this.finalFocusedSeconds,
+    required this.createdAtUtc,
+    required this.updatedAtUtc,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['profile_id'] = Variable<String>(profileId);
+    if (!nullToAbsent || taskId != null) {
+      map['task_id'] = Variable<String>(taskId);
+    }
+    map['status'] = Variable<String>(status);
+    map['started_at_utc'] = Variable<DateTime>(startedAtUtc);
+    if (!nullToAbsent || activeFocusStartedAtUtc != null) {
+      map['active_focus_started_at_utc'] = Variable<DateTime>(
+        activeFocusStartedAtUtc,
+      );
+    }
+    map['accumulated_focused_seconds'] = Variable<int>(
+      accumulatedFocusedSeconds,
+    );
+    if (!nullToAbsent || stoppedAtUtc != null) {
+      map['stopped_at_utc'] = Variable<DateTime>(stoppedAtUtc);
+    }
+    if (!nullToAbsent || finalFocusedSeconds != null) {
+      map['final_focused_seconds'] = Variable<int>(finalFocusedSeconds);
+    }
+    map['created_at_utc'] = Variable<DateTime>(createdAtUtc);
+    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
+    return map;
+  }
+
+  LocalStudySessionsCompanion toCompanion(bool nullToAbsent) {
+    return LocalStudySessionsCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      taskId: taskId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taskId),
+      status: Value(status),
+      startedAtUtc: Value(startedAtUtc),
+      activeFocusStartedAtUtc: activeFocusStartedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(activeFocusStartedAtUtc),
+      accumulatedFocusedSeconds: Value(accumulatedFocusedSeconds),
+      stoppedAtUtc: stoppedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stoppedAtUtc),
+      finalFocusedSeconds: finalFocusedSeconds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(finalFocusedSeconds),
+      createdAtUtc: Value(createdAtUtc),
+      updatedAtUtc: Value(updatedAtUtc),
+    );
+  }
+
+  factory StudySessionRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StudySessionRecord(
+      id: serializer.fromJson<String>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
+      taskId: serializer.fromJson<String?>(json['taskId']),
+      status: serializer.fromJson<String>(json['status']),
+      startedAtUtc: serializer.fromJson<DateTime>(json['startedAtUtc']),
+      activeFocusStartedAtUtc: serializer.fromJson<DateTime?>(
+        json['activeFocusStartedAtUtc'],
+      ),
+      accumulatedFocusedSeconds: serializer.fromJson<int>(
+        json['accumulatedFocusedSeconds'],
+      ),
+      stoppedAtUtc: serializer.fromJson<DateTime?>(json['stoppedAtUtc']),
+      finalFocusedSeconds: serializer.fromJson<int?>(
+        json['finalFocusedSeconds'],
+      ),
+      createdAtUtc: serializer.fromJson<DateTime>(json['createdAtUtc']),
+      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'profileId': serializer.toJson<String>(profileId),
+      'taskId': serializer.toJson<String?>(taskId),
+      'status': serializer.toJson<String>(status),
+      'startedAtUtc': serializer.toJson<DateTime>(startedAtUtc),
+      'activeFocusStartedAtUtc': serializer.toJson<DateTime?>(
+        activeFocusStartedAtUtc,
+      ),
+      'accumulatedFocusedSeconds': serializer.toJson<int>(
+        accumulatedFocusedSeconds,
+      ),
+      'stoppedAtUtc': serializer.toJson<DateTime?>(stoppedAtUtc),
+      'finalFocusedSeconds': serializer.toJson<int?>(finalFocusedSeconds),
+      'createdAtUtc': serializer.toJson<DateTime>(createdAtUtc),
+      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
+    };
+  }
+
+  StudySessionRecord copyWith({
+    String? id,
+    String? profileId,
+    Value<String?> taskId = const Value.absent(),
+    String? status,
+    DateTime? startedAtUtc,
+    Value<DateTime?> activeFocusStartedAtUtc = const Value.absent(),
+    int? accumulatedFocusedSeconds,
+    Value<DateTime?> stoppedAtUtc = const Value.absent(),
+    Value<int?> finalFocusedSeconds = const Value.absent(),
+    DateTime? createdAtUtc,
+    DateTime? updatedAtUtc,
+  }) => StudySessionRecord(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    taskId: taskId.present ? taskId.value : this.taskId,
+    status: status ?? this.status,
+    startedAtUtc: startedAtUtc ?? this.startedAtUtc,
+    activeFocusStartedAtUtc: activeFocusStartedAtUtc.present
+        ? activeFocusStartedAtUtc.value
+        : this.activeFocusStartedAtUtc,
+    accumulatedFocusedSeconds:
+        accumulatedFocusedSeconds ?? this.accumulatedFocusedSeconds,
+    stoppedAtUtc: stoppedAtUtc.present ? stoppedAtUtc.value : this.stoppedAtUtc,
+    finalFocusedSeconds: finalFocusedSeconds.present
+        ? finalFocusedSeconds.value
+        : this.finalFocusedSeconds,
+    createdAtUtc: createdAtUtc ?? this.createdAtUtc,
+    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+  );
+  StudySessionRecord copyWithCompanion(LocalStudySessionsCompanion data) {
+    return StudySessionRecord(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      taskId: data.taskId.present ? data.taskId.value : this.taskId,
+      status: data.status.present ? data.status.value : this.status,
+      startedAtUtc: data.startedAtUtc.present
+          ? data.startedAtUtc.value
+          : this.startedAtUtc,
+      activeFocusStartedAtUtc: data.activeFocusStartedAtUtc.present
+          ? data.activeFocusStartedAtUtc.value
+          : this.activeFocusStartedAtUtc,
+      accumulatedFocusedSeconds: data.accumulatedFocusedSeconds.present
+          ? data.accumulatedFocusedSeconds.value
+          : this.accumulatedFocusedSeconds,
+      stoppedAtUtc: data.stoppedAtUtc.present
+          ? data.stoppedAtUtc.value
+          : this.stoppedAtUtc,
+      finalFocusedSeconds: data.finalFocusedSeconds.present
+          ? data.finalFocusedSeconds.value
+          : this.finalFocusedSeconds,
+      createdAtUtc: data.createdAtUtc.present
+          ? data.createdAtUtc.value
+          : this.createdAtUtc,
+      updatedAtUtc: data.updatedAtUtc.present
+          ? data.updatedAtUtc.value
+          : this.updatedAtUtc,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudySessionRecord(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('taskId: $taskId, ')
+          ..write('status: $status, ')
+          ..write('startedAtUtc: $startedAtUtc, ')
+          ..write('activeFocusStartedAtUtc: $activeFocusStartedAtUtc, ')
+          ..write('accumulatedFocusedSeconds: $accumulatedFocusedSeconds, ')
+          ..write('stoppedAtUtc: $stoppedAtUtc, ')
+          ..write('finalFocusedSeconds: $finalFocusedSeconds, ')
+          ..write('createdAtUtc: $createdAtUtc, ')
+          ..write('updatedAtUtc: $updatedAtUtc')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    profileId,
+    taskId,
+    status,
+    startedAtUtc,
+    activeFocusStartedAtUtc,
+    accumulatedFocusedSeconds,
+    stoppedAtUtc,
+    finalFocusedSeconds,
+    createdAtUtc,
+    updatedAtUtc,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StudySessionRecord &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.taskId == this.taskId &&
+          other.status == this.status &&
+          other.startedAtUtc == this.startedAtUtc &&
+          other.activeFocusStartedAtUtc == this.activeFocusStartedAtUtc &&
+          other.accumulatedFocusedSeconds == this.accumulatedFocusedSeconds &&
+          other.stoppedAtUtc == this.stoppedAtUtc &&
+          other.finalFocusedSeconds == this.finalFocusedSeconds &&
+          other.createdAtUtc == this.createdAtUtc &&
+          other.updatedAtUtc == this.updatedAtUtc);
+}
+
+class LocalStudySessionsCompanion extends UpdateCompanion<StudySessionRecord> {
+  final Value<String> id;
+  final Value<String> profileId;
+  final Value<String?> taskId;
+  final Value<String> status;
+  final Value<DateTime> startedAtUtc;
+  final Value<DateTime?> activeFocusStartedAtUtc;
+  final Value<int> accumulatedFocusedSeconds;
+  final Value<DateTime?> stoppedAtUtc;
+  final Value<int?> finalFocusedSeconds;
+  final Value<DateTime> createdAtUtc;
+  final Value<DateTime> updatedAtUtc;
+  final Value<int> rowid;
+  const LocalStudySessionsCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.startedAtUtc = const Value.absent(),
+    this.activeFocusStartedAtUtc = const Value.absent(),
+    this.accumulatedFocusedSeconds = const Value.absent(),
+    this.stoppedAtUtc = const Value.absent(),
+    this.finalFocusedSeconds = const Value.absent(),
+    this.createdAtUtc = const Value.absent(),
+    this.updatedAtUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalStudySessionsCompanion.insert({
+    required String id,
+    required String profileId,
+    this.taskId = const Value.absent(),
+    required String status,
+    required DateTime startedAtUtc,
+    this.activeFocusStartedAtUtc = const Value.absent(),
+    this.accumulatedFocusedSeconds = const Value.absent(),
+    this.stoppedAtUtc = const Value.absent(),
+    this.finalFocusedSeconds = const Value.absent(),
+    required DateTime createdAtUtc,
+    required DateTime updatedAtUtc,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       profileId = Value(profileId),
+       status = Value(status),
+       startedAtUtc = Value(startedAtUtc),
+       createdAtUtc = Value(createdAtUtc),
+       updatedAtUtc = Value(updatedAtUtc);
+  static Insertable<StudySessionRecord> custom({
+    Expression<String>? id,
+    Expression<String>? profileId,
+    Expression<String>? taskId,
+    Expression<String>? status,
+    Expression<DateTime>? startedAtUtc,
+    Expression<DateTime>? activeFocusStartedAtUtc,
+    Expression<int>? accumulatedFocusedSeconds,
+    Expression<DateTime>? stoppedAtUtc,
+    Expression<int>? finalFocusedSeconds,
+    Expression<DateTime>? createdAtUtc,
+    Expression<DateTime>? updatedAtUtc,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (taskId != null) 'task_id': taskId,
+      if (status != null) 'status': status,
+      if (startedAtUtc != null) 'started_at_utc': startedAtUtc,
+      if (activeFocusStartedAtUtc != null)
+        'active_focus_started_at_utc': activeFocusStartedAtUtc,
+      if (accumulatedFocusedSeconds != null)
+        'accumulated_focused_seconds': accumulatedFocusedSeconds,
+      if (stoppedAtUtc != null) 'stopped_at_utc': stoppedAtUtc,
+      if (finalFocusedSeconds != null)
+        'final_focused_seconds': finalFocusedSeconds,
+      if (createdAtUtc != null) 'created_at_utc': createdAtUtc,
+      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalStudySessionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? profileId,
+    Value<String?>? taskId,
+    Value<String>? status,
+    Value<DateTime>? startedAtUtc,
+    Value<DateTime?>? activeFocusStartedAtUtc,
+    Value<int>? accumulatedFocusedSeconds,
+    Value<DateTime?>? stoppedAtUtc,
+    Value<int?>? finalFocusedSeconds,
+    Value<DateTime>? createdAtUtc,
+    Value<DateTime>? updatedAtUtc,
+    Value<int>? rowid,
+  }) {
+    return LocalStudySessionsCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      taskId: taskId ?? this.taskId,
+      status: status ?? this.status,
+      startedAtUtc: startedAtUtc ?? this.startedAtUtc,
+      activeFocusStartedAtUtc:
+          activeFocusStartedAtUtc ?? this.activeFocusStartedAtUtc,
+      accumulatedFocusedSeconds:
+          accumulatedFocusedSeconds ?? this.accumulatedFocusedSeconds,
+      stoppedAtUtc: stoppedAtUtc ?? this.stoppedAtUtc,
+      finalFocusedSeconds: finalFocusedSeconds ?? this.finalFocusedSeconds,
+      createdAtUtc: createdAtUtc ?? this.createdAtUtc,
+      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (taskId.present) {
+      map['task_id'] = Variable<String>(taskId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (startedAtUtc.present) {
+      map['started_at_utc'] = Variable<DateTime>(startedAtUtc.value);
+    }
+    if (activeFocusStartedAtUtc.present) {
+      map['active_focus_started_at_utc'] = Variable<DateTime>(
+        activeFocusStartedAtUtc.value,
+      );
+    }
+    if (accumulatedFocusedSeconds.present) {
+      map['accumulated_focused_seconds'] = Variable<int>(
+        accumulatedFocusedSeconds.value,
+      );
+    }
+    if (stoppedAtUtc.present) {
+      map['stopped_at_utc'] = Variable<DateTime>(stoppedAtUtc.value);
+    }
+    if (finalFocusedSeconds.present) {
+      map['final_focused_seconds'] = Variable<int>(finalFocusedSeconds.value);
+    }
+    if (createdAtUtc.present) {
+      map['created_at_utc'] = Variable<DateTime>(createdAtUtc.value);
+    }
+    if (updatedAtUtc.present) {
+      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalStudySessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('taskId: $taskId, ')
+          ..write('status: $status, ')
+          ..write('startedAtUtc: $startedAtUtc, ')
+          ..write('activeFocusStartedAtUtc: $activeFocusStartedAtUtc, ')
+          ..write('accumulatedFocusedSeconds: $accumulatedFocusedSeconds, ')
+          ..write('stoppedAtUtc: $stoppedAtUtc, ')
+          ..write('finalFocusedSeconds: $finalFocusedSeconds, ')
+          ..write('createdAtUtc: $createdAtUtc, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalStudyBreaksTable extends LocalStudyBreaks
+    with TableInfo<$LocalStudyBreaksTable, StudyBreakRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalStudyBreaksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_profiles (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtUtcMeta = const VerificationMeta(
+    'startedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAtUtc = GeneratedColumn<DateTime>(
+    'started_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _plannedEndAtUtcMeta = const VerificationMeta(
+    'plannedEndAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> plannedEndAtUtc =
+      GeneratedColumn<DateTime>(
+        'planned_end_at_utc',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _endedAtUtcMeta = const VerificationMeta(
+    'endedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAtUtc = GeneratedColumn<DateTime>(
+    'ended_at_utc',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notificationIdMeta = const VerificationMeta(
+    'notificationId',
+  );
+  @override
+  late final GeneratedColumn<int> notificationId = GeneratedColumn<int>(
+    'notification_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    sessionId,
+    startedAtUtc,
+    plannedEndAtUtc,
+    endedAtUtc,
+    notificationId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_study_breaks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StudyBreakRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('started_at_utc')) {
+      context.handle(
+        _startedAtUtcMeta,
+        startedAtUtc.isAcceptableOrUnknown(
+          data['started_at_utc']!,
+          _startedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtUtcMeta);
+    }
+    if (data.containsKey('planned_end_at_utc')) {
+      context.handle(
+        _plannedEndAtUtcMeta,
+        plannedEndAtUtc.isAcceptableOrUnknown(
+          data['planned_end_at_utc']!,
+          _plannedEndAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_plannedEndAtUtcMeta);
+    }
+    if (data.containsKey('ended_at_utc')) {
+      context.handle(
+        _endedAtUtcMeta,
+        endedAtUtc.isAcceptableOrUnknown(
+          data['ended_at_utc']!,
+          _endedAtUtcMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notification_id')) {
+      context.handle(
+        _notificationIdMeta,
+        notificationId.isAcceptableOrUnknown(
+          data['notification_id']!,
+          _notificationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_notificationIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {notificationId},
+    {id, profileId, sessionId},
+  ];
+  @override
+  StudyBreakRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StudyBreakRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      startedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at_utc'],
+      )!,
+      plannedEndAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}planned_end_at_utc'],
+      )!,
+      endedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at_utc'],
+      ),
+      notificationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}notification_id'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalStudyBreaksTable createAlias(String alias) {
+    return $LocalStudyBreaksTable(attachedDatabase, alias);
+  }
+}
+
+class StudyBreakRecord extends DataClass
+    implements Insertable<StudyBreakRecord> {
+  final String id;
+  final String profileId;
+  final String sessionId;
+  final DateTime startedAtUtc;
+  final DateTime plannedEndAtUtc;
+  final DateTime? endedAtUtc;
+
+  /// Negative IDs are reserved for study break notifications. Task reminder
+  /// IDs use the positive range, preventing accidental cross-cancellation.
+  final int notificationId;
+  const StudyBreakRecord({
+    required this.id,
+    required this.profileId,
+    required this.sessionId,
+    required this.startedAtUtc,
+    required this.plannedEndAtUtc,
+    this.endedAtUtc,
+    required this.notificationId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['profile_id'] = Variable<String>(profileId);
+    map['session_id'] = Variable<String>(sessionId);
+    map['started_at_utc'] = Variable<DateTime>(startedAtUtc);
+    map['planned_end_at_utc'] = Variable<DateTime>(plannedEndAtUtc);
+    if (!nullToAbsent || endedAtUtc != null) {
+      map['ended_at_utc'] = Variable<DateTime>(endedAtUtc);
+    }
+    map['notification_id'] = Variable<int>(notificationId);
+    return map;
+  }
+
+  LocalStudyBreaksCompanion toCompanion(bool nullToAbsent) {
+    return LocalStudyBreaksCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      sessionId: Value(sessionId),
+      startedAtUtc: Value(startedAtUtc),
+      plannedEndAtUtc: Value(plannedEndAtUtc),
+      endedAtUtc: endedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endedAtUtc),
+      notificationId: Value(notificationId),
+    );
+  }
+
+  factory StudyBreakRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StudyBreakRecord(
+      id: serializer.fromJson<String>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      startedAtUtc: serializer.fromJson<DateTime>(json['startedAtUtc']),
+      plannedEndAtUtc: serializer.fromJson<DateTime>(json['plannedEndAtUtc']),
+      endedAtUtc: serializer.fromJson<DateTime?>(json['endedAtUtc']),
+      notificationId: serializer.fromJson<int>(json['notificationId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'profileId': serializer.toJson<String>(profileId),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'startedAtUtc': serializer.toJson<DateTime>(startedAtUtc),
+      'plannedEndAtUtc': serializer.toJson<DateTime>(plannedEndAtUtc),
+      'endedAtUtc': serializer.toJson<DateTime?>(endedAtUtc),
+      'notificationId': serializer.toJson<int>(notificationId),
+    };
+  }
+
+  StudyBreakRecord copyWith({
+    String? id,
+    String? profileId,
+    String? sessionId,
+    DateTime? startedAtUtc,
+    DateTime? plannedEndAtUtc,
+    Value<DateTime?> endedAtUtc = const Value.absent(),
+    int? notificationId,
+  }) => StudyBreakRecord(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    sessionId: sessionId ?? this.sessionId,
+    startedAtUtc: startedAtUtc ?? this.startedAtUtc,
+    plannedEndAtUtc: plannedEndAtUtc ?? this.plannedEndAtUtc,
+    endedAtUtc: endedAtUtc.present ? endedAtUtc.value : this.endedAtUtc,
+    notificationId: notificationId ?? this.notificationId,
+  );
+  StudyBreakRecord copyWithCompanion(LocalStudyBreaksCompanion data) {
+    return StudyBreakRecord(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      startedAtUtc: data.startedAtUtc.present
+          ? data.startedAtUtc.value
+          : this.startedAtUtc,
+      plannedEndAtUtc: data.plannedEndAtUtc.present
+          ? data.plannedEndAtUtc.value
+          : this.plannedEndAtUtc,
+      endedAtUtc: data.endedAtUtc.present
+          ? data.endedAtUtc.value
+          : this.endedAtUtc,
+      notificationId: data.notificationId.present
+          ? data.notificationId.value
+          : this.notificationId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudyBreakRecord(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('startedAtUtc: $startedAtUtc, ')
+          ..write('plannedEndAtUtc: $plannedEndAtUtc, ')
+          ..write('endedAtUtc: $endedAtUtc, ')
+          ..write('notificationId: $notificationId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    profileId,
+    sessionId,
+    startedAtUtc,
+    plannedEndAtUtc,
+    endedAtUtc,
+    notificationId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StudyBreakRecord &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.sessionId == this.sessionId &&
+          other.startedAtUtc == this.startedAtUtc &&
+          other.plannedEndAtUtc == this.plannedEndAtUtc &&
+          other.endedAtUtc == this.endedAtUtc &&
+          other.notificationId == this.notificationId);
+}
+
+class LocalStudyBreaksCompanion extends UpdateCompanion<StudyBreakRecord> {
+  final Value<String> id;
+  final Value<String> profileId;
+  final Value<String> sessionId;
+  final Value<DateTime> startedAtUtc;
+  final Value<DateTime> plannedEndAtUtc;
+  final Value<DateTime?> endedAtUtc;
+  final Value<int> notificationId;
+  final Value<int> rowid;
+  const LocalStudyBreaksCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.startedAtUtc = const Value.absent(),
+    this.plannedEndAtUtc = const Value.absent(),
+    this.endedAtUtc = const Value.absent(),
+    this.notificationId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalStudyBreaksCompanion.insert({
+    required String id,
+    required String profileId,
+    required String sessionId,
+    required DateTime startedAtUtc,
+    required DateTime plannedEndAtUtc,
+    this.endedAtUtc = const Value.absent(),
+    required int notificationId,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       profileId = Value(profileId),
+       sessionId = Value(sessionId),
+       startedAtUtc = Value(startedAtUtc),
+       plannedEndAtUtc = Value(plannedEndAtUtc),
+       notificationId = Value(notificationId);
+  static Insertable<StudyBreakRecord> custom({
+    Expression<String>? id,
+    Expression<String>? profileId,
+    Expression<String>? sessionId,
+    Expression<DateTime>? startedAtUtc,
+    Expression<DateTime>? plannedEndAtUtc,
+    Expression<DateTime>? endedAtUtc,
+    Expression<int>? notificationId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (sessionId != null) 'session_id': sessionId,
+      if (startedAtUtc != null) 'started_at_utc': startedAtUtc,
+      if (plannedEndAtUtc != null) 'planned_end_at_utc': plannedEndAtUtc,
+      if (endedAtUtc != null) 'ended_at_utc': endedAtUtc,
+      if (notificationId != null) 'notification_id': notificationId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalStudyBreaksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? profileId,
+    Value<String>? sessionId,
+    Value<DateTime>? startedAtUtc,
+    Value<DateTime>? plannedEndAtUtc,
+    Value<DateTime?>? endedAtUtc,
+    Value<int>? notificationId,
+    Value<int>? rowid,
+  }) {
+    return LocalStudyBreaksCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      sessionId: sessionId ?? this.sessionId,
+      startedAtUtc: startedAtUtc ?? this.startedAtUtc,
+      plannedEndAtUtc: plannedEndAtUtc ?? this.plannedEndAtUtc,
+      endedAtUtc: endedAtUtc ?? this.endedAtUtc,
+      notificationId: notificationId ?? this.notificationId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (startedAtUtc.present) {
+      map['started_at_utc'] = Variable<DateTime>(startedAtUtc.value);
+    }
+    if (plannedEndAtUtc.present) {
+      map['planned_end_at_utc'] = Variable<DateTime>(plannedEndAtUtc.value);
+    }
+    if (endedAtUtc.present) {
+      map['ended_at_utc'] = Variable<DateTime>(endedAtUtc.value);
+    }
+    if (notificationId.present) {
+      map['notification_id'] = Variable<int>(notificationId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalStudyBreaksCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('startedAtUtc: $startedAtUtc, ')
+          ..write('plannedEndAtUtc: $plannedEndAtUtc, ')
+          ..write('endedAtUtc: $endedAtUtc, ')
+          ..write('notificationId: $notificationId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4095,6 +5320,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ScheduledReminderRequestsTable(this);
   late final $SnoozedReminderRecordsTable snoozedReminderRecords =
       $SnoozedReminderRecordsTable(this);
+  late final $LocalStudySessionsTable localStudySessions =
+      $LocalStudySessionsTable(this);
+  late final $LocalStudyBreaksTable localStudyBreaks = $LocalStudyBreaksTable(
+    this,
+  );
   late final Index localTasksProfileStartStatusIdx = Index(
     'local_tasks_profile_start_status_idx',
     'CREATE INDEX local_tasks_profile_start_status_idx ON local_tasks (profile_id, start_date, status)',
@@ -4106,6 +5336,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index localLifecycleProfileTaskTimeIdx = Index(
     'local_lifecycle_profile_task_time_idx',
     'CREATE INDEX local_lifecycle_profile_task_time_idx ON local_lifecycle_events (profile_id, task_id, occurred_at_utc)',
+  );
+  late final Index localStudySessionsProfileStartIdx = Index(
+    'local_study_sessions_profile_start_idx',
+    'CREATE INDEX local_study_sessions_profile_start_idx ON local_study_sessions (profile_id, started_at_utc)',
+  );
+  late final Index localStudyBreaksProfileSessionStartIdx = Index(
+    'local_study_breaks_profile_session_start_idx',
+    'CREATE INDEX local_study_breaks_profile_session_start_idx ON local_study_breaks (profile_id, session_id, started_at_utc)',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -4119,9 +5357,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     reminderPreferences,
     scheduledReminderRequests,
     snoozedReminderRecords,
+    localStudySessions,
+    localStudyBreaks,
     localTasksProfileStartStatusIdx,
     localProgressProfileTaskTimeIdx,
     localLifecycleProfileTaskTimeIdx,
+    localStudySessionsProfileStartIdx,
+    localStudyBreaksProfileSessionStartIdx,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4179,6 +5421,27 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       result: [
         TableUpdate('snoozed_reminder_records', kind: UpdateKind.delete),
       ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'local_profiles',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('local_study_sessions', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'local_tasks',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('local_study_sessions', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'local_profiles',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('local_study_breaks', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -4345,6 +5608,47 @@ final class $$LocalProfilesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _snoozedReminderRecordsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$LocalStudySessionsTable, List<StudySessionRecord>>
+  _localStudySessionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.localStudySessions,
+        aliasName: 'local_profiles__id__local_study_sessions__profile_id',
+      );
+
+  $$LocalStudySessionsTableProcessedTableManager get localStudySessionsRefs {
+    final manager = $$LocalStudySessionsTableTableManager(
+      $_db,
+      $_db.localStudySessions,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _localStudySessionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$LocalStudyBreaksTable, List<StudyBreakRecord>>
+  _localStudyBreaksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.localStudyBreaks,
+    aliasName: 'local_profiles__id__local_study_breaks__profile_id',
+  );
+
+  $$LocalStudyBreaksTableProcessedTableManager get localStudyBreaksRefs {
+    final manager = $$LocalStudyBreaksTableTableManager(
+      $_db,
+      $_db.localStudyBreaks,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _localStudyBreaksRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -4531,6 +5835,56 @@ class $$LocalProfilesTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> localStudySessionsRefs(
+    Expression<bool> Function($$LocalStudySessionsTableFilterComposer f) f,
+  ) {
+    final $$LocalStudySessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.localStudySessions,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalStudySessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.localStudySessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> localStudyBreaksRefs(
+    Expression<bool> Function($$LocalStudyBreaksTableFilterComposer f) f,
+  ) {
+    final $$LocalStudyBreaksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.localStudyBreaks,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalStudyBreaksTableFilterComposer(
+            $db: $db,
+            $table: $db.localStudyBreaks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -4747,6 +6101,57 @@ class $$LocalProfilesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> localStudySessionsRefs<T extends Object>(
+    Expression<T> Function($$LocalStudySessionsTableAnnotationComposer a) f,
+  ) {
+    final $$LocalStudySessionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.localStudySessions,
+          getReferencedColumn: (t) => t.profileId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LocalStudySessionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.localStudySessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> localStudyBreaksRefs<T extends Object>(
+    Expression<T> Function($$LocalStudyBreaksTableAnnotationComposer a) f,
+  ) {
+    final $$LocalStudyBreaksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.localStudyBreaks,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalStudyBreaksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localStudyBreaks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LocalProfilesTableTableManager
@@ -4769,6 +6174,8 @@ class $$LocalProfilesTableTableManager
             bool reminderPreferencesRefs,
             bool scheduledReminderRequestsRefs,
             bool snoozedReminderRecordsRefs,
+            bool localStudySessionsRefs,
+            bool localStudyBreaksRefs,
           })
         > {
   $$LocalProfilesTableTableManager(_$AppDatabase db, $LocalProfilesTable table)
@@ -4826,6 +6233,8 @@ class $$LocalProfilesTableTableManager
                 reminderPreferencesRefs = false,
                 scheduledReminderRequestsRefs = false,
                 snoozedReminderRecordsRefs = false,
+                localStudySessionsRefs = false,
+                localStudyBreaksRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -4837,6 +6246,8 @@ class $$LocalProfilesTableTableManager
                     if (scheduledReminderRequestsRefs)
                       db.scheduledReminderRequests,
                     if (snoozedReminderRecordsRefs) db.snoozedReminderRecords,
+                    if (localStudySessionsRefs) db.localStudySessions,
+                    if (localStudyBreaksRefs) db.localStudyBreaks,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -4967,6 +6378,48 @@ class $$LocalProfilesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (localStudySessionsRefs)
+                        await $_getPrefetchedData<
+                          ProfileRecord,
+                          $LocalProfilesTable,
+                          StudySessionRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalProfilesTableReferences
+                              ._localStudySessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).localStudySessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (localStudyBreaksRefs)
+                        await $_getPrefetchedData<
+                          ProfileRecord,
+                          $LocalProfilesTable,
+                          StudyBreakRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalProfilesTableReferences
+                              ._localStudyBreaksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).localStudyBreaksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4994,6 +6447,8 @@ typedef $$LocalProfilesTableProcessedTableManager =
         bool reminderPreferencesRefs,
         bool scheduledReminderRequestsRefs,
         bool snoozedReminderRecordsRefs,
+        bool localStudySessionsRefs,
+        bool localStudyBreaksRefs,
       })
     >;
 typedef $$LocalTasksTableCreateCompanionBuilder = LocalTasksCompanion Function({
@@ -5048,6 +6503,27 @@ final class $$LocalTasksTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$LocalStudySessionsTable, List<StudySessionRecord>>
+  _localStudySessionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.localStudySessions,
+        aliasName: 'local_tasks__id__local_study_sessions__task_id',
+      );
+
+  $$LocalStudySessionsTableProcessedTableManager get localStudySessionsRefs {
+    final manager = $$LocalStudySessionsTableTableManager(
+      $_db,
+      $_db.localStudySessions,
+    ).filter((f) => f.taskId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _localStudySessionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 }
@@ -5142,6 +6618,31 @@ class $$LocalTasksTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> localStudySessionsRefs(
+    Expression<bool> Function($$LocalStudySessionsTableFilterComposer f) f,
+  ) {
+    final $$LocalStudySessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.localStudySessions,
+      getReferencedColumn: (t) => t.taskId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalStudySessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.localStudySessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -5319,6 +6820,32 @@ class $$LocalTasksTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> localStudySessionsRefs<T extends Object>(
+    Expression<T> Function($$LocalStudySessionsTableAnnotationComposer a) f,
+  ) {
+    final $$LocalStudySessionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.localStudySessions,
+          getReferencedColumn: (t) => t.taskId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LocalStudySessionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.localStudySessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalTasksTableTableManager
@@ -5334,7 +6861,7 @@ class $$LocalTasksTableTableManager
           $$LocalTasksTableUpdateCompanionBuilder,
           (TaskRecord, $$LocalTasksTableReferences),
           TaskRecord,
-          PrefetchHooks Function({bool profileId})
+          PrefetchHooks Function({bool profileId, bool localStudySessionsRefs})
         > {
   $$LocalTasksTableTableManager(_$AppDatabase db, $LocalTasksTable table)
     : super(
@@ -5419,45 +6946,70 @@ class $$LocalTasksTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({profileId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (profileId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.profileId,
-                        referencedTable: $$LocalTasksTableReferences
-                            ._profileIdTable(db),
-                        referencedColumn: $$LocalTasksTableReferences
-                            ._profileIdTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({profileId = false, localStudySessionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (localStudySessionsRefs) db.localStudySessions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (profileId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.profileId,
+                            referencedTable: $$LocalTasksTableReferences
+                                ._profileIdTable(db),
+                            referencedColumn: $$LocalTasksTableReferences
+                                ._profileIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (localStudySessionsRefs)
+                        await $_getPrefetchedData<
+                          TaskRecord,
+                          $LocalTasksTable,
+                          StudySessionRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalTasksTableReferences
+                              ._localStudySessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalTasksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).localStudySessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.taskId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -5474,7 +7026,7 @@ typedef $$LocalTasksTableProcessedTableManager =
       $$LocalTasksTableUpdateCompanionBuilder,
       (TaskRecord, $$LocalTasksTableReferences),
       TaskRecord,
-      PrefetchHooks Function({bool profileId})
+      PrefetchHooks Function({bool profileId, bool localStudySessionsRefs})
     >;
 typedef $$LocalProgressEntriesTableCreateCompanionBuilder =
     LocalProgressEntriesCompanion Function({
@@ -7773,6 +9325,923 @@ typedef $$SnoozedReminderRecordsTableProcessedTableManager =
       SnoozedReminderRecord,
       PrefetchHooks Function({bool profileId, bool parentIdentity})
     >;
+typedef $$LocalStudySessionsTableCreateCompanionBuilder =
+    LocalStudySessionsCompanion Function({
+      required String id,
+      required String profileId,
+      Value<String?> taskId,
+      required String status,
+      required DateTime startedAtUtc,
+      Value<DateTime?> activeFocusStartedAtUtc,
+      Value<int> accumulatedFocusedSeconds,
+      Value<DateTime?> stoppedAtUtc,
+      Value<int?> finalFocusedSeconds,
+      required DateTime createdAtUtc,
+      required DateTime updatedAtUtc,
+      Value<int> rowid,
+    });
+typedef $$LocalStudySessionsTableUpdateCompanionBuilder =
+    LocalStudySessionsCompanion Function({
+      Value<String> id,
+      Value<String> profileId,
+      Value<String?> taskId,
+      Value<String> status,
+      Value<DateTime> startedAtUtc,
+      Value<DateTime?> activeFocusStartedAtUtc,
+      Value<int> accumulatedFocusedSeconds,
+      Value<DateTime?> stoppedAtUtc,
+      Value<int?> finalFocusedSeconds,
+      Value<DateTime> createdAtUtc,
+      Value<DateTime> updatedAtUtc,
+      Value<int> rowid,
+    });
+
+final class $$LocalStudySessionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LocalStudySessionsTable,
+          StudySessionRecord
+        > {
+  $$LocalStudySessionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalProfilesTable _profileIdTable(_$AppDatabase db) => db
+      .localProfiles
+      .createAlias('local_study_sessions__profile_id__local_profiles__id');
+
+  $$LocalProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<String>('profile_id')!;
+
+    final manager = $$LocalProfilesTableTableManager(
+      $_db,
+      $_db.localProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LocalTasksTable _taskIdTable(_$AppDatabase db) => db.localTasks
+      .createAlias('local_study_sessions__task_id__local_tasks__id');
+
+  $$LocalTasksTableProcessedTableManager? get taskId {
+    final $_column = $_itemColumn<String>('task_id');
+    if ($_column == null) return null;
+    final manager = $$LocalTasksTableTableManager(
+      $_db,
+      $_db.localTasks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_taskIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LocalStudySessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalStudySessionsTable> {
+  $$LocalStudySessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAtUtc => $composableBuilder(
+    column: $table.startedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get activeFocusStartedAtUtc => $composableBuilder(
+    column: $table.activeFocusStartedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get accumulatedFocusedSeconds => $composableBuilder(
+    column: $table.accumulatedFocusedSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get stoppedAtUtc => $composableBuilder(
+    column: $table.stoppedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get finalFocusedSeconds => $composableBuilder(
+    column: $table.finalFocusedSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalProfilesTableFilterComposer get profileId {
+    final $$LocalProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.localProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.localProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LocalTasksTableFilterComposer get taskId {
+    final $$LocalTasksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.taskId,
+      referencedTable: $db.localTasks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalTasksTableFilterComposer(
+            $db: $db,
+            $table: $db.localTasks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocalStudySessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalStudySessionsTable> {
+  $$LocalStudySessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAtUtc => $composableBuilder(
+    column: $table.startedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get activeFocusStartedAtUtc => $composableBuilder(
+    column: $table.activeFocusStartedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get accumulatedFocusedSeconds => $composableBuilder(
+    column: $table.accumulatedFocusedSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get stoppedAtUtc => $composableBuilder(
+    column: $table.stoppedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get finalFocusedSeconds => $composableBuilder(
+    column: $table.finalFocusedSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalProfilesTableOrderingComposer get profileId {
+    final $$LocalProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.localProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.localProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LocalTasksTableOrderingComposer get taskId {
+    final $$LocalTasksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.taskId,
+      referencedTable: $db.localTasks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalTasksTableOrderingComposer(
+            $db: $db,
+            $table: $db.localTasks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocalStudySessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalStudySessionsTable> {
+  $$LocalStudySessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAtUtc => $composableBuilder(
+    column: $table.startedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get activeFocusStartedAtUtc => $composableBuilder(
+    column: $table.activeFocusStartedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get accumulatedFocusedSeconds => $composableBuilder(
+    column: $table.accumulatedFocusedSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get stoppedAtUtc => $composableBuilder(
+    column: $table.stoppedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get finalFocusedSeconds => $composableBuilder(
+    column: $table.finalFocusedSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => column,
+  );
+
+  $$LocalProfilesTableAnnotationComposer get profileId {
+    final $$LocalProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.localProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LocalTasksTableAnnotationComposer get taskId {
+    final $$LocalTasksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.taskId,
+      referencedTable: $db.localTasks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalTasksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localTasks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocalStudySessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalStudySessionsTable,
+          StudySessionRecord,
+          $$LocalStudySessionsTableFilterComposer,
+          $$LocalStudySessionsTableOrderingComposer,
+          $$LocalStudySessionsTableAnnotationComposer,
+          $$LocalStudySessionsTableCreateCompanionBuilder,
+          $$LocalStudySessionsTableUpdateCompanionBuilder,
+          (StudySessionRecord, $$LocalStudySessionsTableReferences),
+          StudySessionRecord,
+          PrefetchHooks Function({bool profileId, bool taskId})
+        > {
+  $$LocalStudySessionsTableTableManager(
+    _$AppDatabase db,
+    $LocalStudySessionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalStudySessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalStudySessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocalStudySessionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
+                Value<String?> taskId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<DateTime> startedAtUtc = const Value.absent(),
+                Value<DateTime?> activeFocusStartedAtUtc = const Value.absent(),
+                Value<int> accumulatedFocusedSeconds = const Value.absent(),
+                Value<DateTime?> stoppedAtUtc = const Value.absent(),
+                Value<int?> finalFocusedSeconds = const Value.absent(),
+                Value<DateTime> createdAtUtc = const Value.absent(),
+                Value<DateTime> updatedAtUtc = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalStudySessionsCompanion(
+                id: id,
+                profileId: profileId,
+                taskId: taskId,
+                status: status,
+                startedAtUtc: startedAtUtc,
+                activeFocusStartedAtUtc: activeFocusStartedAtUtc,
+                accumulatedFocusedSeconds: accumulatedFocusedSeconds,
+                stoppedAtUtc: stoppedAtUtc,
+                finalFocusedSeconds: finalFocusedSeconds,
+                createdAtUtc: createdAtUtc,
+                updatedAtUtc: updatedAtUtc,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String profileId,
+                Value<String?> taskId = const Value.absent(),
+                required String status,
+                required DateTime startedAtUtc,
+                Value<DateTime?> activeFocusStartedAtUtc = const Value.absent(),
+                Value<int> accumulatedFocusedSeconds = const Value.absent(),
+                Value<DateTime?> stoppedAtUtc = const Value.absent(),
+                Value<int?> finalFocusedSeconds = const Value.absent(),
+                required DateTime createdAtUtc,
+                required DateTime updatedAtUtc,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalStudySessionsCompanion.insert(
+                id: id,
+                profileId: profileId,
+                taskId: taskId,
+                status: status,
+                startedAtUtc: startedAtUtc,
+                activeFocusStartedAtUtc: activeFocusStartedAtUtc,
+                accumulatedFocusedSeconds: accumulatedFocusedSeconds,
+                stoppedAtUtc: stoppedAtUtc,
+                finalFocusedSeconds: finalFocusedSeconds,
+                createdAtUtc: createdAtUtc,
+                updatedAtUtc: updatedAtUtc,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$LocalStudySessionsTable, StudySessionRecord>(
+                    table,
+                  ),
+                  $$LocalStudySessionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({profileId = false, taskId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (profileId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.profileId,
+                        referencedTable: $$LocalStudySessionsTableReferences
+                            ._profileIdTable(db),
+                        referencedColumn: $$LocalStudySessionsTableReferences
+                            ._profileIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (taskId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.taskId,
+                        referencedTable: $$LocalStudySessionsTableReferences
+                            ._taskIdTable(db),
+                        referencedColumn: $$LocalStudySessionsTableReferences
+                            ._taskIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LocalStudySessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalStudySessionsTable,
+      StudySessionRecord,
+      $$LocalStudySessionsTableFilterComposer,
+      $$LocalStudySessionsTableOrderingComposer,
+      $$LocalStudySessionsTableAnnotationComposer,
+      $$LocalStudySessionsTableCreateCompanionBuilder,
+      $$LocalStudySessionsTableUpdateCompanionBuilder,
+      (StudySessionRecord, $$LocalStudySessionsTableReferences),
+      StudySessionRecord,
+      PrefetchHooks Function({bool profileId, bool taskId})
+    >;
+typedef $$LocalStudyBreaksTableCreateCompanionBuilder =
+    LocalStudyBreaksCompanion Function({
+      required String id,
+      required String profileId,
+      required String sessionId,
+      required DateTime startedAtUtc,
+      required DateTime plannedEndAtUtc,
+      Value<DateTime?> endedAtUtc,
+      required int notificationId,
+      Value<int> rowid,
+    });
+typedef $$LocalStudyBreaksTableUpdateCompanionBuilder =
+    LocalStudyBreaksCompanion Function({
+      Value<String> id,
+      Value<String> profileId,
+      Value<String> sessionId,
+      Value<DateTime> startedAtUtc,
+      Value<DateTime> plannedEndAtUtc,
+      Value<DateTime?> endedAtUtc,
+      Value<int> notificationId,
+      Value<int> rowid,
+    });
+
+final class $$LocalStudyBreaksTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LocalStudyBreaksTable,
+          StudyBreakRecord
+        > {
+  $$LocalStudyBreaksTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalProfilesTable _profileIdTable(_$AppDatabase db) => db
+      .localProfiles
+      .createAlias('local_study_breaks__profile_id__local_profiles__id');
+
+  $$LocalProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<String>('profile_id')!;
+
+    final manager = $$LocalProfilesTableTableManager(
+      $_db,
+      $_db.localProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LocalStudyBreaksTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalStudyBreaksTable> {
+  $$LocalStudyBreaksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAtUtc => $composableBuilder(
+    column: $table.startedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get plannedEndAtUtc => $composableBuilder(
+    column: $table.plannedEndAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAtUtc => $composableBuilder(
+    column: $table.endedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get notificationId => $composableBuilder(
+    column: $table.notificationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalProfilesTableFilterComposer get profileId {
+    final $$LocalProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.localProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.localProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocalStudyBreaksTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalStudyBreaksTable> {
+  $$LocalStudyBreaksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAtUtc => $composableBuilder(
+    column: $table.startedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get plannedEndAtUtc => $composableBuilder(
+    column: $table.plannedEndAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAtUtc => $composableBuilder(
+    column: $table.endedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get notificationId => $composableBuilder(
+    column: $table.notificationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalProfilesTableOrderingComposer get profileId {
+    final $$LocalProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.localProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.localProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocalStudyBreaksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalStudyBreaksTable> {
+  $$LocalStudyBreaksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAtUtc => $composableBuilder(
+    column: $table.startedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get plannedEndAtUtc => $composableBuilder(
+    column: $table.plannedEndAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get endedAtUtc => $composableBuilder(
+    column: $table.endedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get notificationId => $composableBuilder(
+    column: $table.notificationId,
+    builder: (column) => column,
+  );
+
+  $$LocalProfilesTableAnnotationComposer get profileId {
+    final $$LocalProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.localProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocalStudyBreaksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalStudyBreaksTable,
+          StudyBreakRecord,
+          $$LocalStudyBreaksTableFilterComposer,
+          $$LocalStudyBreaksTableOrderingComposer,
+          $$LocalStudyBreaksTableAnnotationComposer,
+          $$LocalStudyBreaksTableCreateCompanionBuilder,
+          $$LocalStudyBreaksTableUpdateCompanionBuilder,
+          (StudyBreakRecord, $$LocalStudyBreaksTableReferences),
+          StudyBreakRecord,
+          PrefetchHooks Function({bool profileId})
+        > {
+  $$LocalStudyBreaksTableTableManager(
+    _$AppDatabase db,
+    $LocalStudyBreaksTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalStudyBreaksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalStudyBreaksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocalStudyBreaksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
+                Value<String> sessionId = const Value.absent(),
+                Value<DateTime> startedAtUtc = const Value.absent(),
+                Value<DateTime> plannedEndAtUtc = const Value.absent(),
+                Value<DateTime?> endedAtUtc = const Value.absent(),
+                Value<int> notificationId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalStudyBreaksCompanion(
+                id: id,
+                profileId: profileId,
+                sessionId: sessionId,
+                startedAtUtc: startedAtUtc,
+                plannedEndAtUtc: plannedEndAtUtc,
+                endedAtUtc: endedAtUtc,
+                notificationId: notificationId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String profileId,
+                required String sessionId,
+                required DateTime startedAtUtc,
+                required DateTime plannedEndAtUtc,
+                Value<DateTime?> endedAtUtc = const Value.absent(),
+                required int notificationId,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalStudyBreaksCompanion.insert(
+                id: id,
+                profileId: profileId,
+                sessionId: sessionId,
+                startedAtUtc: startedAtUtc,
+                plannedEndAtUtc: plannedEndAtUtc,
+                endedAtUtc: endedAtUtc,
+                notificationId: notificationId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$LocalStudyBreaksTable, StudyBreakRecord>(table),
+                  $$LocalStudyBreaksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({profileId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (profileId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.profileId,
+                        referencedTable: $$LocalStudyBreaksTableReferences
+                            ._profileIdTable(db),
+                        referencedColumn: $$LocalStudyBreaksTableReferences
+                            ._profileIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LocalStudyBreaksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalStudyBreaksTable,
+      StudyBreakRecord,
+      $$LocalStudyBreaksTableFilterComposer,
+      $$LocalStudyBreaksTableOrderingComposer,
+      $$LocalStudyBreaksTableAnnotationComposer,
+      $$LocalStudyBreaksTableCreateCompanionBuilder,
+      $$LocalStudyBreaksTableUpdateCompanionBuilder,
+      (StudyBreakRecord, $$LocalStudyBreaksTableReferences),
+      StudyBreakRecord,
+      PrefetchHooks Function({bool profileId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7797,4 +10266,8 @@ class $AppDatabaseManager {
         _db,
         _db.snoozedReminderRecords,
       );
+  $$LocalStudySessionsTableTableManager get localStudySessions =>
+      $$LocalStudySessionsTableTableManager(_db, _db.localStudySessions);
+  $$LocalStudyBreaksTableTableManager get localStudyBreaks =>
+      $$LocalStudyBreaksTableTableManager(_db, _db.localStudyBreaks);
 }

@@ -73,6 +73,7 @@ final class ReminderPreferences {
   final ReminderTime endOfDayTime;
   final ReminderTime? quietHoursStart;
   final ReminderTime? quietHoursEnd;
+
   /// Whether a regular notification may replace an unavailable alarm.
   /// Disabled by default so the app never silently downgrades alarm delivery.
   final bool allowStandardNotificationFallback;

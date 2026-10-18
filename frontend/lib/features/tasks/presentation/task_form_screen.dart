@@ -5,11 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../application/tasks/task_use_cases.dart';
 import '../../../domain/entities/task.dart';
 import '../../../app/task_use_case_providers.dart';
+import 'task_display_formatters.dart';
 
 class TaskFormScreen extends ConsumerStatefulWidget {
-  const TaskFormScreen({this.taskId, super.key});
+  const TaskFormScreen({
+    this.taskId,
+    this.returnCreatedTaskId = false,
+    super.key,
+  });
 
   final String? taskId;
+  final bool returnCreatedTaskId;
 
   @override
   ConsumerState<TaskFormScreen> createState() => _TaskFormScreenState();
@@ -214,7 +220,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 }
               },
               icon: const Icon(Icons.calendar_month_outlined),
-              label: Text(value?.toStorageString() ?? 'Choose date'),
+              label: Text(
+                value == null ? 'Choose date' : formatTaskDate(value),
+              ),
             ),
           ),
           if (allowClear && value != null)
@@ -240,9 +248,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         maximumEndDate: _maximumEndDate,
         effortInput: _effortController.text,
       );
+      String? createdTaskId;
       if (widget.taskId == null) {
         final createTask = await ref.read(createTaskUseCaseProvider.future);
-        await createTask(input);
+        createdTaskId = (await createTask(input)).id;
       } else {
         final updateTask = await ref.read(updateTaskUseCaseProvider.future);
         final updated = await updateTask(
@@ -263,12 +272,15 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         }
         ref.invalidate(taskDetailsProvider(widget.taskId!));
       }
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context)
+            .pop(widget.returnCreatedTaskId ? createdTaskId : null);
+      }
     } on TaskValidationException catch (error) {
       setState(() => _errors = error.errors);
       _formKey.currentState?.validate();
-    } catch (error) {
-      _showMessage('Could not save task: $error');
+    } catch (_) {
+      _showMessage('Could not save task. Check the details and try again.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -289,10 +301,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         _maximumEndDate = task.maximumEndDate;
         _loadingExisting = false;
       });
-    } catch (error) {
+    } catch (_) {
       if (!mounted) return;
       setState(() {
-        _loadError = 'Could not load this task: $error';
+        _loadError =
+            'Could not load this task. Return to the list and try again.';
         _loadingExisting = false;
       });
     }

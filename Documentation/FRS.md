@@ -1,15 +1,15 @@
 # Functional Requirements Specification (FRS)
 
-**Project:** Personal and public task planning mobile application  
-**Status:** MVP baseline updated; alarm-style reminder behavior added; calendar scope remains deferred  
-**Version:** 0.7  
+**Project:** Personal and public task planning mobile application
+**Status:** V1 direction updated: polished offline mobile app with local study tracking; Java backend is V2
+**Version:** 0.8
 **Date:** 18 October 2026
 
 ## 1. Purpose
 
-Define the first buildable release of a mobile task-planning application. It captures tasks, highlights work planned for today, supports completion and progress logging, reminds the user to plan or report work, and presents current, future, and completed tasks. Calendar history and a study timer are recorded as later capabilities so the initial design can accommodate them without treating them as launch requirements.
+Define V1 of a mobile task-planning application. It captures tasks, highlights work planned for today, supports completion and progress logging, reminds the user to plan or report work, presents current, future, and completed tasks, and records focused study sessions locally. V1 is offline-first and does not require a Java backend or account. Java backend, sign-in, and cloud synchronization move to V2.
 
-This document is the approved product baseline for MVP planning. The app is intended for personal use first and later public distribution over the internet, initially targeting India. The answered [Open Questions](Open-Questions.md) and selected engineering defaults are reflected in the HLD and LLD.
+This document is the product baseline for V1 planning. The app is intended for personal use first and public Android/iOS distribution later, initially targeting India. Public distribution still requires privacy, store, and release review. The answered [Open Questions](Open-Questions.md) and selected engineering defaults are reflected in the HLD and LLD.
 
 ## 2. Product vision and goals
 
@@ -23,12 +23,14 @@ The application should help an individual reliably decide what to work on today,
 - Let users mark a task fully complete or record partial progress.
 - Separate current, scheduled-for-later, and completed work.
 - Offer configurable reminders for planning and end-of-day logging.
+- Let users time focused study sessions, optionally linked to a task, and review their study history.
 - Preserve a useful task and progress history for future calendar and reporting features.
 
-### Out of scope for the initial release
+### Out of scope for V1
 
-- Study timer and automatic study-time tracking.
-- Calendar screen and detailed planned-versus-actual calendar analysis.
+- Java backend, accounts, cloud synchronization, and guest-to-account transfer (V2).
+- Calendar screen and detailed planned-versus-actual calendar analysis (later V1.x candidate).
+- Automatic tracking of other apps' usage or device-wide screen time. Study time is explicitly started by the user inside MyTasks.
 - Team collaboration, shared projects, assignment to other people, or public task discovery; users' task data stays private.
 - Social features, gamification, and advanced analytics.
 
@@ -65,16 +67,18 @@ An individual who plans tasks for themselves, checks a daily list, and records c
 
 ## 5. Scope and release outline
 
-### Initial release (MVP)
+### V1 — local-first mobile release
 
-1. User setup with local guest use or a cloud account. Google sign-in is supported on Android and iOS; iOS also offers Sign in with Apple.
+1. Local guest use with encrypted on-device storage; no account or server is required.
 2. Create, view, edit, complete, reopen, and delete tasks.
 3. Current, scheduled-later, and completed task lists.
 4. Today's effort-based green visual indicator and overdue red indication.
 5. Full completion and partial progress logging.
 6. A privacy-safe daily task summary plus configurable, alarm-style actionable reminders, subject to operating-system capabilities and user authorization.
 7. Basic settings for reminder times, time zone behavior, and notification preferences.
-8. Offline task access and edits, with synchronization for account users and user-mediated resolution when the same task field was changed on multiple offline devices.
+8. Study sessions with elapsed focused time, optional task linkage, break intervals, and local history.
+
+V2 adds Google/Apple sign-in, Java APIs, cloud accounts, sync, and guest-to-account transfer. See the [V1 implementation plan](V1-Implementation-Plan.md) for phased delivery and release checks.
 
 ### Later release candidates
 
@@ -150,15 +154,22 @@ Priority labels: **Must** = required for the first usable release; **Should** = 
 | NOTIF-011 | Must | The app requests any platform-specific alarm authorization with an explanation. If exact alarm or AlarmKit authorization is unavailable, it reports the limitation and offers a standard-notification fallback only as an explicit user choice; it must not silently replace an alarm with a notification or claim Clock-level delivery guarantees. |
 | NOTIF-012 | Must | Tapping “Open” on a no-task alarm opens task creation with today's date selected; tapping “Open” on an end-of-day alarm opens Today. Snoozing delays that alarm by 10 minutes; stopping/dismissing acknowledges the current occurrence without disabling future reminders. |
 
-### 6.6 Future calendar and study timer foundations
+### 6.6 Study tracking and future calendar foundations
 
 | ID | Priority | Requirement |
 |---|---|---|
 | FUT-001 | Later | Calendar view will show task assignments by date and distinguish original planned end date from actual completion date. |
 | FUT-002 | Later | Calendar/reporting will calculate and display schedule extension using a clearly defined comparison (for example, completion date minus original planned end date). |
-| FUT-003 | Later | Study timer will let the user track a study session, optionally linked to a task, and persist elapsed duration. Pause, background, interruption, and manual-edit behavior require separate requirements. |
-| FUT-004 | Later | Data design should retain the original target date and dated progress/completion events so these features can be added without reconstructing history from current task values. |
-| FUT-005 | Later | The user can export all their data in a documented, portable format. This is not required for the first release. |
+| STUDY-001 | Must (V1) | The user can start a study session from a Study section and see elapsed focused time. Timing is explicit; the app does not monitor usage of other apps. |
+| STUDY-002 | Must (V1) | Before starting, the user may link an existing non-completed task, create a task, or start an unlinked session. Linking a session does not automatically alter task progress. |
+| STUDY-003 | Must (V1) | The user can start a break for 10 minutes, 20 minutes, or a custom duration. Study time excludes breaks. The user resumes study explicitly after a break; the app does not silently resume counting. |
+| STUDY-004 | Must (V1) | The user can stop a session. The app saves its start/end times, focused duration, break durations, and optional task link, then displays it in study history and daily totals. |
+| STUDY-005 | Must (V1) | The active session survives app backgrounding and process recreation. Elapsed time is derived from persisted timestamps and session state, not from a UI counter or a continuously running background service. On reopen, the user can review and stop/resume the recovered session. |
+| STUDY-006 | Must (V1) | Only one active study session is allowed per local profile. Invalid transitions (for example, starting a second session while one is active) are prevented with a clear explanation. |
+| STUDY-007 | Must (V1) | Study history remains when a linked task is deleted; the session becomes unlinked. Task progress is never changed automatically by study time. |
+| STUDY-008 | Must (V1) | Break durations from 1 to 240 minutes are accepted. Break-end alerts use ordinary local notifications when OS permission is granted; notification denial does not prevent or pause the timer. Expired breaks require the user to resume explicitly. |
+| FUT-004 | Must | Data design retains original task targets and dated progress/completion events so later calendar reporting does not reconstruct history from current task values. |
+| FUT-005 | Later | The user can export all their data in a documented, portable format. This is not required for V1. |
 
 ### 6.7 Account and data lifecycle
 

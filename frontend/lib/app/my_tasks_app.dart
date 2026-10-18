@@ -7,6 +7,7 @@ import '../data/notifications/android_task_alarm_channel.dart';
 import '../data/notifications/local_notification_initializer.dart';
 import '../data/notifications/ios_alarm_kit_channel.dart';
 import 'app_shell.dart';
+import 'app_theme.dart';
 import 'notification_tap_router.dart';
 import 'reminder_reconciliation_observer.dart';
 
@@ -22,8 +23,6 @@ class _MyTasksAppState extends State<MyTasksApp> with WidgetsBindingObserver {
   final _alarmChannel = AndroidTaskAlarmChannel();
   final _iosAlarmChannel = IosAlarmKitChannel();
   StreamSubscription<String>? _tapSubscription;
-
-  static const _brandGreen = Color(0xFF2E7D32);
 
   @override
   void initState() {
@@ -80,20 +79,8 @@ class _MyTasksAppState extends State<MyTasksApp> with WidgetsBindingObserver {
       navigatorKey: _notificationTapRouter.navigatorKey,
       title: 'MyTasks',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _brandGreen,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _brandGreen,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: MyTasksTheme.light,
+      darkTheme: MyTasksTheme.dark,
       home: const ReminderReconciliationObserver(child: AppShell()),
     );
   }

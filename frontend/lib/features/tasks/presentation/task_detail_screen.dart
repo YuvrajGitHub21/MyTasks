@@ -8,6 +8,7 @@ import 'lifecycle_controls.dart';
 import 'lifecycle_history_section.dart';
 import 'progress_history_section.dart';
 import 'task_form_screen.dart';
+import 'task_display_formatters.dart';
 
 /// Task details and task-level actions.
 class TaskDetailScreen extends ConsumerWidget {
@@ -40,9 +41,11 @@ class TaskDetailScreen extends ConsumerWidget {
       ),
       body: task.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _DetailsMessage(
+        error: (_, _) => _DetailsMessage(
           icon: Icons.error_outline,
-          message: 'Could not load this task: $error',
+          message: 'Could not load this task. Try again in a moment.',
+          actionLabel: 'Retry',
+          onAction: () => ref.invalidate(taskDetailsProvider(taskId)),
         ),
         data: (value) => value == null
             ? const _DetailsMessage(
@@ -60,8 +63,8 @@ class TaskDetailScreen extends ConsumerWidget {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete this task?'),
         content: const Text(
-          'This permanently deletes the task and all of its progress and '
-          'completion history from this device.',
+          'This permanently deletes the task and its progress and completion '
+          'history. Linked study sessions are kept and become unlinked.',
         ),
         actions: [
           TextButton(
@@ -89,10 +92,10 @@ class TaskDetailScreen extends ConsumerWidget {
           const SnackBar(content: Text('This task was already deleted.')),
         );
       }
-    } catch (error) {
+    } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete this task: $error')),
+        const SnackBar(content: Text('Could not delete this task. Try again.')),
       );
     }
   }
@@ -118,37 +121,89 @@ class _TaskDetails extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Text(task.topic, style: Theme.of(context).textTheme.headlineSmall),
-        if (task.subtopic?.isNotEmpty ?? false) ...[
-          const SizedBox(height: 4),
-          Text(task.subtopic!, style: Theme.of(context).textTheme.titleMedium),
-        ],
-        const SizedBox(height: 20),
-        _DetailRow(label: 'Status', value: status),
-        _DetailRow(label: 'Start date', value: task.startDate.toString()),
-        _DetailRow(
-          label: 'Planned end date',
-          value: task.plannedEndDate.toString(),
-        ),
-        if (task.maximumEndDate case final maximumEndDate?)
-          _DetailRow(
-            label: 'Maximum end date',
-            value: maximumEndDate.toString(),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _statusColor(
+                      context,
+                      category,
+                    ).withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Text(
+                    status,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: _statusColor(context, category),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  task.topic,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                if (task.subtopic?.isNotEmpty ?? false) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    task.subtopic!,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
+                const SizedBox(height: 18),
+                _DetailRow(
+                  label: 'Start date',
+                  value: formatTaskDate(task.startDate),
+                ),
+                _DetailRow(
+                  label: 'Planned end',
+                  value: formatTaskDate(task.plannedEndDate),
+                ),
+                if (task.maximumEndDate case final maximumEndDate?)
+                  _DetailRow(
+                    label: 'Maximum end',
+                    value: formatTaskDate(maximumEndDate),
+                  ),
+                _DetailRow(
+                  label: 'Estimated effort',
+                  value: '${_formatEffort(task.effortHundredths)} hours',
+                ),
+                if (task.completedAt case final completedAt?)
+                  _DetailRow(
+                    label: 'Completed',
+                    value: formatInstantInIst(completedAt),
+                  ),
+              ],
+            ),
           ),
-        _DetailRow(
-          label: 'Estimated effort',
-          value: '${_formatEffort(task.effortHundredths)} hours',
         ),
-        if (task.completedAt case final completedAt?)
-          _DetailRow(
-            label: 'Completed',
-            value: completedAt.toLocal().toString(),
-          ),
         if (task.description?.isNotEmpty ?? false) ...[
-          const SizedBox(height: 20),
-          Text('Description', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(task.description!),
+          const SizedBox(height: 14),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Description',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(task.description!),
+                ],
+              ),
+            ),
+          ),
         ],
         LifecycleControls(taskId: taskId, status: task.status),
         ProgressHistorySection(taskId: taskId),
@@ -174,25 +229,32 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
+    padding: const EdgeInsets.symmetric(vertical: 7),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 152,
+        Expanded(
           child: Text(label, style: Theme.of(context).textTheme.labelLarge),
         ),
-        Expanded(child: Text(value)),
+        const SizedBox(width: 12),
+        Flexible(child: Text(value, textAlign: TextAlign.end)),
       ],
     ),
   );
 }
 
 class _DetailsMessage extends StatelessWidget {
-  const _DetailsMessage({required this.icon, required this.message});
+  const _DetailsMessage({
+    required this.icon,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
 
   final IconData icon;
   final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) => Center(
@@ -204,8 +266,20 @@ class _DetailsMessage extends StatelessWidget {
           Icon(icon, size: 48),
           const SizedBox(height: 12),
           Text(message, textAlign: TextAlign.center),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: 14),
+            OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+          ],
         ],
       ),
     ),
   );
 }
+
+Color _statusColor(BuildContext context, TaskCategory category) =>
+    switch (category) {
+      TaskCategory.current => const Color(0xFF2E8058),
+      TaskCategory.scheduled => Theme.of(context).colorScheme.secondary,
+      TaskCategory.overdue => Theme.of(context).colorScheme.error,
+      TaskCategory.completed => Theme.of(context).colorScheme.primary,
+    };

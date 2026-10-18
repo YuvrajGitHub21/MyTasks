@@ -1,10 +1,10 @@
 # Implementation Roadmap
 
-**Project:** Personal and public task planning mobile application  
-**Status:** Proposed delivery sequence based on the approved requirements and design  
-**Version:** 0.4  
-**Date:** 18 October 2026  
-**Sources:** [FRS.md](FRS.md) v0.7, [HLD.md](HLD.md) v0.5, [LLD.md](LLD.md) v0.6
+**Project:** Personal and public task planning mobile application
+**Status:** V1 local-first app comes before V2 Java backend
+**Version:** 0.6
+**Date:** 18 October 2026
+**Sources:** [FRS.md](FRS.md) v0.8, [HLD.md](HLD.md) v0.5, [LLD.md](LLD.md) v0.6
 
 ## 1. Purpose
 
@@ -13,27 +13,27 @@ This roadmap turns the agreed product and technical designs into an ordered, rev
 ## 2. Delivery principles
 
 - Build the core task experience locally first so a user can get value without an account or network.
-- Add the backend and account features after the task model and local behavior are stable.
+- Finish and release the local-first V1 experience before starting Java backend/account work in V2.
 - Prove offline synchronization and conflict handling with a small end-to-end slice before expanding it to every operation.
 - Keep API and worker deployments modular but independently scalable; do not introduce microservices or database sharding without measured need.
 - Treat Android and iOS notification behavior as platform-specific and best effort, and test each on real devices before release claims are made.
 - Keep account data private by default. “Public” means public app availability, not public task visibility.
-- Ship the study timer and calendar as later scope, while preserving task date and progress history needed to support them.
+- Include manually started study sessions in V1; keep device-wide app-usage tracking and calendar analytics out of V1.
 
 ## 3. MVP release boundary
 
-The first usable release includes:
+V1 is a standalone local-first mobile release. It includes:
 
-- Android and iOS app with guest use and Google sign-in; iOS also supports Sign in with Apple.
-- Task creation, viewing, editing, deletion, completion, reopening, and the current, scheduled, and completed lists.
+- Android and iOS guest use without requiring an account, Java backend, or network access for task management.
+- Task creation, viewing, editing, deletion, completion, reopening, and current, scheduled, and completed lists.
 - Required topic, start date, planned end date, effort estimate, optional subtopic/description, and optional maximum end date.
-- Today/overdue classification, deterministic effort-based green shades, and overdue styling with accessible text/icon cues.
-- Partial progress logs, progress history, and correction/deletion of logs.
-- India Standard Time rules, configurable local alarm-style prompts for actionable reminders, signed-in push summaries, and privacy-safe previews.
-- Offline access and edits for signed-in users, durable sync, guest-to-account transfer, and user-mediated same-field conflict resolution.
-- Account deletion with the documented retention behavior, basic operational monitoring, and release support information.
+- Today/overdue classification, effort-based green shades, accessible status labels, partial progress logs, and task history.
+- India Standard Time reminder settings and OS-managed local reminders, subject to device permissions and platform behavior.
+- Encrypted local task, reminder, and study-session data, with the database key held in platform secure storage.
+- A manually started study stopwatch, optional task link, timed breaks, daily focus totals, and local session history.
+- Public-release privacy disclosures, retention/account-deletion decisions where applicable, store metadata, and support information before publishing.
 
-Study timer, calendar view, data export, collaboration, recurring tasks, and advanced analytics are outside this MVP.
+Java APIs, accounts, cloud sync, guest-to-account transfer, and server-side operations are V2. Calendar view, export, collaboration, recurring tasks, and advanced analytics remain later scope.
 
 ## 4. Milestones
 
@@ -102,7 +102,28 @@ Study timer, calendar view, data export, collaboration, recurring tasks, and adv
 
 **Exit criteria:** Reminder predicates match the FRS; duplicate alarms are prevented; no task names appear on the lock screen; Open/Snooze/Stop behavior works; unsupported/denied alarm authorization degrades clearly; Android/iOS behavior and limitations are documented from device validation.
 
-### M4 — Java backend and signed-in account
+### V1 — polished offline mobile app and study tracking
+
+**Detailed plan:** [V1 Implementation Plan](V1-Implementation-Plan.md).
+
+**Status:** Core study domain, encrypted schema v5, task linking, timer UI, break alerts, and first visual refresh are implemented. Automated Flutter tests pass. Android real-device regression/accessibility checks and iOS/macOS validation remain; see the detailed plan.
+
+**Goal:** Make the existing Android/iOS guest app polished, reliable, and useful as a standalone release before backend work.
+
+**Work:**
+
+- Audit the current Flutter journeys and refresh them against the owner-provided `DESIGN.md`, translating its visual tokens into native Flutter components.
+- Polish task lists, task forms/details, progress/lifecycle flows, reminder settings, loading/empty/error states, accessibility, and navigation without breaking the encrypted local data or alarm behavior.
+- Add a local study-session feature with task linking, explicit break intervals, process-recovery behavior, daily totals, and history.
+- Complete Android/iOS platform verification and public-release privacy/store readiness review. iOS runtime validation requires macOS/Xcode.
+
+**Exit criteria:** Core task and reminder journeys remain reliable after the visual refresh; study time persists correctly across backgrounding/relaunch; accessibility and real-device checks are recorded; V1 scope and limitations are clearly disclosed.
+
+### M4 — V2 Java backend and signed-in account
+
+**Release:** V2, after V1 is reviewed and released.
+
+**Detailed plan:** [M4 Implementation Plan](M4-Implementation-Plan.md).
 
 **Goal:** Provide a secure server-side account and task API on the chosen stack.
 
@@ -117,7 +138,7 @@ Study timer, calendar view, data export, collaboration, recurring tasks, and adv
 
 **Exit criteria:** Signed-in users can securely create/read/update/delete their own cloud data; another account cannot read or mutate it; Google and Apple tokens are verified server-side; migrations work on a clean database and a prior schema; API errors and operational health are observable.
 
-### M5 — Offline sync, guest transfer, and conflict resolution
+### M5 — V2 offline sync, guest transfer, and conflict resolution
 
 **Goal:** Safely reconcile local edits with cloud state across reconnects and devices.
 
@@ -132,7 +153,7 @@ Study timer, calendar view, data export, collaboration, recurring tasks, and adv
 
 **Exit criteria:** Offline create/edit/delete and progress changes eventually sync exactly once; retry does not duplicate records; same-field concurrent edits require user resolution; separate-field updates preserve both valid changes; transfer can resume safely after interruption; tombstones prevent deleted tasks from returning.
 
-### M6 — Signed-in reminders and production readiness
+### M6 — V2 signed-in reminders and production readiness
 
 **Goal:** Complete account-based reminders and prepare a safe private pilot/public release.
 
@@ -161,7 +182,7 @@ M0 Product/UX readiness
                       └─ M6 Signed-in reminders and release readiness
 ```
 
-M3 and M4 can overlap after M2 defines stable task/progress contracts. M5 depends on both the local model and backend mutation semantics. M6 depends on signed-in identity, device registration, and reminder rules.
+V1 follows M2/M3 and precedes M4. M4–M6 compose V2: M5 depends on both the local model and backend mutation semantics; M6 depends on signed-in identity, device registration, and reminder rules.
 
 ## 6. First implementation slice
 
@@ -188,12 +209,13 @@ Each milestone is complete only when:
 - Operationally relevant failures are visible through safe logs/metrics.
 - Documentation and decision records reflect the implementation.
 
-## 8. Deferred after MVP
+## 8. Deferred after V1
 
 The following should be estimated and planned as separate roadmap increments after MVP feedback:
 
 - Calendar view with original planned interval, actual completion date, and extension visualization.
-- Study timer with session pause/background/recovery rules and optional task linkage.
+- Java backend, sign-in, sync, guest transfer, and signed-in push reminders (V2, M4–M6).
+- Calendar view with original planned interval, actual completion date, and extension visualization.
 - Portable data export, recurring tasks, checklists/subtasks, reusable categories, richer search/filter, widgets, and advanced reports.
 - Collaboration or shared tasks only if the product direction changes; private per-user task data remains the MVP default.
 

@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/local/database_providers.dart';
+import 'study_session_use_case_providers.dart';
 import 'reminder_use_case_providers.dart';
 
 /// Keeps local reminder schedules aligned when the app starts or resumes.
@@ -73,6 +74,22 @@ class _ReminderReconciliationObserverState
           }
           final reconcile = await ref.read(reconcileRemindersProvider.future);
           await reconcile(profile.id);
+          try {
+            final study = await ref.read(studySessionUseCasesProvider.future);
+            final active = await study.repository.getActiveSessionDetail(
+              profile.id,
+            );
+            final activeBreak = active?.activeBreak;
+            if (activeBreak != null) {
+              await study.alertScheduler.schedule(
+                breakId: activeBreak.id,
+                plannedEndAtUtc: activeBreak.plannedEndAtUtc,
+              );
+            }
+          } catch (error, stackTrace) {
+            debugPrint('Could not restore the study break alert: $error');
+            debugPrintStack(stackTrace: stackTrace);
+          }
         } catch (error, stackTrace) {
           // Reminder setup is best effort; never block opening or resuming tasks.
           debugPrint('Could not reconcile reminders on app resume: $error');
