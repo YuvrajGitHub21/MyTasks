@@ -8,21 +8,25 @@ final class SaveReminderPreferences {
     required ReminderPreferencesRepository repository,
     required String profileId,
     required ReminderClock clock,
+    Future<void> Function()? afterSaved,
   }) => SaveReminderPreferences._(
     repository: repository,
     profileId: profileId,
     clock: clock,
+    afterSaved: afterSaved,
   );
 
   const SaveReminderPreferences._({
     required this._repository,
     required this._profileId,
     required this._clock,
+    required this._afterSaved,
   });
 
   final ReminderPreferencesRepository _repository;
   final String _profileId;
   final ReminderClock _clock;
+  final Future<void> Function()? _afterSaved;
 
   Future<void> call(ReminderPreferences preferences) async {
     if (preferences.profileId != _profileId) {
@@ -31,6 +35,17 @@ final class SaveReminderPreferences {
         'preferences.profileId',
         'Preferences must belong to the active profile.',
       );
+    }
+    if (preferences.quietHoursStart != preferences.quietHoursEnd &&
+        (preferences.quietHoursStart == null ||
+            preferences.quietHoursEnd == null)) {
+      throw ArgumentError(
+        'Quiet-hours start and end must both be set or both be disabled.',
+      );
+    }
+    if (preferences.quietHoursStart != null &&
+        preferences.quietHoursStart == preferences.quietHoursEnd) {
+      throw ArgumentError('Quiet-hours start and end must differ.');
     }
 
     await _repository.savePreferences(
@@ -47,5 +62,6 @@ final class SaveReminderPreferences {
         updatedAtUtc: _clock.nowUtc().toUtc(),
       ),
     );
+    await _afterSaved?.call();
   }
 }

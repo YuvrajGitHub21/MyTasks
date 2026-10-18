@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as timezone;
 
@@ -113,7 +115,12 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
         iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: request.identity,
+      // Payload contains only routing metadata. Never include task text.
+      payload: jsonEncode({
+        'version': 1,
+        'contentKind': request.contentKind.name,
+        'identity': request.identity,
+      }),
     );
   }
 

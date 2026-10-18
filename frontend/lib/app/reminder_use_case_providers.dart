@@ -11,6 +11,7 @@ import '../data/local/reminder_repository_providers.dart';
 import '../data/local/task_repository_provider.dart';
 import '../data/notifications/flutter_local_notification_scheduler.dart';
 import '../domain/services/notification_scheduler.dart';
+import 'reminder_reconciliation_callbacks.dart';
 
 /// One clock instance is shared by reminder use cases in this provider scope.
 final reminderClockProvider = Provider<ReminderClock>(
@@ -46,6 +47,7 @@ final saveReminderPreferencesProvider = FutureProvider<SaveReminderPreferences>(
       repository: preferences,
       profileId: profile.id,
       clock: clock,
+      afterSaved: () => reconcileRemindersAfterChange(ref, profile.id),
     );
   },
 );

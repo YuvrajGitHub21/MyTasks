@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as timezone_data;
 import 'package:timezone/timezone.dart' as timezone;
@@ -21,6 +23,20 @@ class LocalNotificationInitializer {
   final FlutterLocalNotificationsPlugin _plugin;
   bool _initialized = false;
 
+  static final StreamController<String> _tapPayloads =
+      StreamController<String>.broadcast();
+  static String? _launchPayload;
+
+  /// Warm-app notification taps arrive here after plugin initialization.
+  static Stream<String> get tapPayloads => _tapPayloads.stream;
+
+  /// Cold-start taps are held until the app's Navigator is ready.
+  static String? takeLaunchPayload() {
+    final payload = _launchPayload;
+    _launchPayload = null;
+    return payload;
+  }
+
   Future<void> initialize() async {
     if (_initialized) return;
 
@@ -40,7 +56,16 @@ class LocalNotificationInitializer {
           requestSoundPermission: false,
         ),
       ),
+      onDidReceiveNotificationResponse: (response) {
+        final payload = response.payload;
+        if (payload != null) _tapPayloads.add(payload);
+      },
     );
+
+    final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      _launchPayload = launchDetails?.notificationResponse?.payload;
+    }
 
     // Android 8+ requires every notification to belong to a channel. Creating
     // the same channel on later launches is safe; Android retains its settings.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../domain/entities/task.dart';
+import '../features/reminders/presentation/reminder_settings_screen.dart';
 import '../features/tasks/presentation/task_form_screen.dart';
 import '../features/tasks/presentation/task_list_screen.dart';
 
@@ -40,7 +41,22 @@ class _AppShellState extends State<AppShell> {
     final destination = _destinations[_selectedIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text(destination.title)),
+      appBar: AppBar(
+        title: Text(destination.title),
+        actions: [
+          IconButton(
+            tooltip: 'Reminder settings',
+            onPressed: () {
+              Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => const ReminderSettingsScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.notifications_outlined),
+          ),
+        ],
+      ),
       body: TaskListScreen(category: destination.category),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
