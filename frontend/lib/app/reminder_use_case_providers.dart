@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'alarm_permission_provider.dart';
 import '../application/reminders/calculate_desired_reminders.dart';
 import '../application/reminders/reconcile_reminders.dart';
 import '../application/reminders/reminder_clock.dart';
@@ -59,9 +60,14 @@ final notificationSchedulerProvider = FutureProvider<NotificationScheduler>((
   final repository = await ref.watch(
     scheduledReminderRepositoryProvider.future,
   );
+  final preferencesRepository = await ref.watch(
+    reminderPreferencesRepositoryProvider.future,
+  );
   return FlutterLocalNotificationScheduler(
     plugin: FlutterLocalNotificationsPlugin(),
     repository: repository,
+    preferencesRepository: preferencesRepository,
+    alarmPermissionGateway: ref.watch(alarmPermissionGatewayProvider),
   );
 });
 

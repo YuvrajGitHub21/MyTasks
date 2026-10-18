@@ -57,6 +57,8 @@ final class SaveReminderPreferences {
         endOfDayTime: preferences.endOfDayTime,
         quietHoursStart: preferences.quietHoursStart,
         quietHoursEnd: preferences.quietHoursEnd,
+        allowStandardNotificationFallback:
+            preferences.allowStandardNotificationFallback,
         soundEnabled: preferences.soundEnabled,
         vibrationEnabled: preferences.vibrationEnabled,
         updatedAtUtc: _clock.nowUtc().toUtc(),

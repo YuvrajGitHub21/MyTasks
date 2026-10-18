@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/repositories/reminder_preferences_repository.dart';
 import '../../domain/repositories/scheduled_reminder_repository.dart';
+import '../../domain/repositories/snoozed_reminder_repository.dart';
 import 'database_providers.dart';
 import 'drift_reminder_preferences_repository.dart';
 import 'drift_scheduled_reminder_repository.dart';
+import 'drift_snoozed_reminder_repository.dart';
 
 /// Builds reminder repositories after the encrypted database is available.
 final reminderPreferencesRepositoryProvider =
@@ -17,4 +19,10 @@ final scheduledReminderRepositoryProvider =
     FutureProvider<ScheduledReminderRepository>((ref) async {
       final database = await ref.watch(appDatabaseProvider.future);
       return DriftScheduledReminderRepository(database);
+    });
+
+final snoozedReminderRepositoryProvider =
+    FutureProvider<SnoozedReminderRepository>((ref) async {
+      final database = await ref.watch(appDatabaseProvider.future);
+      return DriftSnoozedReminderRepository(database);
     });

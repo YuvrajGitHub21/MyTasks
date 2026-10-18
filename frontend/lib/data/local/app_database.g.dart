@@ -2275,6 +2275,21 @@ class $ReminderPreferencesTable extends ReminderPreferences
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _allowStandardNotificationFallbackMeta =
+      const VerificationMeta('allowStandardNotificationFallback');
+  @override
+  late final GeneratedColumn<bool> allowStandardNotificationFallback =
+      GeneratedColumn<bool>(
+        'allow_standard_notification_fallback',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("allow_standard_notification_fallback" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   static const VerificationMeta _soundEnabledMeta = const VerificationMeta(
     'soundEnabled',
   );
@@ -2325,6 +2340,7 @@ class $ReminderPreferencesTable extends ReminderPreferences
     endOfDayTimeMinutes,
     quietHoursStartMinutes,
     quietHoursEndMinutes,
+    allowStandardNotificationFallback,
     soundEnabled,
     vibrationEnabled,
     updatedAtUtc,
@@ -2406,6 +2422,15 @@ class $ReminderPreferencesTable extends ReminderPreferences
         ),
       );
     }
+    if (data.containsKey('allow_standard_notification_fallback')) {
+      context.handle(
+        _allowStandardNotificationFallbackMeta,
+        allowStandardNotificationFallback.isAcceptableOrUnknown(
+          data['allow_standard_notification_fallback']!,
+          _allowStandardNotificationFallbackMeta,
+        ),
+      );
+    }
     if (data.containsKey('sound_enabled')) {
       context.handle(
         _soundEnabledMeta,
@@ -2475,6 +2500,10 @@ class $ReminderPreferencesTable extends ReminderPreferences
         DriftSqlType.int,
         data['${effectivePrefix}quiet_hours_end_minutes'],
       ),
+      allowStandardNotificationFallback: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}allow_standard_notification_fallback'],
+      )!,
       soundEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}sound_enabled'],
@@ -2505,6 +2534,7 @@ class ReminderPreferenceRecord extends DataClass
   final int endOfDayTimeMinutes;
   final int? quietHoursStartMinutes;
   final int? quietHoursEndMinutes;
+  final bool allowStandardNotificationFallback;
   final bool soundEnabled;
   final bool vibrationEnabled;
   final DateTime updatedAtUtc;
@@ -2516,6 +2546,7 @@ class ReminderPreferenceRecord extends DataClass
     required this.endOfDayTimeMinutes,
     this.quietHoursStartMinutes,
     this.quietHoursEndMinutes,
+    required this.allowStandardNotificationFallback,
     required this.soundEnabled,
     required this.vibrationEnabled,
     required this.updatedAtUtc,
@@ -2534,6 +2565,9 @@ class ReminderPreferenceRecord extends DataClass
     if (!nullToAbsent || quietHoursEndMinutes != null) {
       map['quiet_hours_end_minutes'] = Variable<int>(quietHoursEndMinutes);
     }
+    map['allow_standard_notification_fallback'] = Variable<bool>(
+      allowStandardNotificationFallback,
+    );
     map['sound_enabled'] = Variable<bool>(soundEnabled);
     map['vibration_enabled'] = Variable<bool>(vibrationEnabled);
     map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
@@ -2553,6 +2587,9 @@ class ReminderPreferenceRecord extends DataClass
       quietHoursEndMinutes: quietHoursEndMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(quietHoursEndMinutes),
+      allowStandardNotificationFallback: Value(
+        allowStandardNotificationFallback,
+      ),
       soundEnabled: Value(soundEnabled),
       vibrationEnabled: Value(vibrationEnabled),
       updatedAtUtc: Value(updatedAtUtc),
@@ -2578,6 +2615,9 @@ class ReminderPreferenceRecord extends DataClass
       quietHoursEndMinutes: serializer.fromJson<int?>(
         json['quietHoursEndMinutes'],
       ),
+      allowStandardNotificationFallback: serializer.fromJson<bool>(
+        json['allowStandardNotificationFallback'],
+      ),
       soundEnabled: serializer.fromJson<bool>(json['soundEnabled']),
       vibrationEnabled: serializer.fromJson<bool>(json['vibrationEnabled']),
       updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
@@ -2594,6 +2634,9 @@ class ReminderPreferenceRecord extends DataClass
       'endOfDayTimeMinutes': serializer.toJson<int>(endOfDayTimeMinutes),
       'quietHoursStartMinutes': serializer.toJson<int?>(quietHoursStartMinutes),
       'quietHoursEndMinutes': serializer.toJson<int?>(quietHoursEndMinutes),
+      'allowStandardNotificationFallback': serializer.toJson<bool>(
+        allowStandardNotificationFallback,
+      ),
       'soundEnabled': serializer.toJson<bool>(soundEnabled),
       'vibrationEnabled': serializer.toJson<bool>(vibrationEnabled),
       'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
@@ -2608,6 +2651,7 @@ class ReminderPreferenceRecord extends DataClass
     int? endOfDayTimeMinutes,
     Value<int?> quietHoursStartMinutes = const Value.absent(),
     Value<int?> quietHoursEndMinutes = const Value.absent(),
+    bool? allowStandardNotificationFallback,
     bool? soundEnabled,
     bool? vibrationEnabled,
     DateTime? updatedAtUtc,
@@ -2623,6 +2667,9 @@ class ReminderPreferenceRecord extends DataClass
     quietHoursEndMinutes: quietHoursEndMinutes.present
         ? quietHoursEndMinutes.value
         : this.quietHoursEndMinutes,
+    allowStandardNotificationFallback:
+        allowStandardNotificationFallback ??
+        this.allowStandardNotificationFallback,
     soundEnabled: soundEnabled ?? this.soundEnabled,
     vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
     updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
@@ -2648,6 +2695,10 @@ class ReminderPreferenceRecord extends DataClass
       quietHoursEndMinutes: data.quietHoursEndMinutes.present
           ? data.quietHoursEndMinutes.value
           : this.quietHoursEndMinutes,
+      allowStandardNotificationFallback:
+          data.allowStandardNotificationFallback.present
+          ? data.allowStandardNotificationFallback.value
+          : this.allowStandardNotificationFallback,
       soundEnabled: data.soundEnabled.present
           ? data.soundEnabled.value
           : this.soundEnabled,
@@ -2670,6 +2721,9 @@ class ReminderPreferenceRecord extends DataClass
           ..write('endOfDayTimeMinutes: $endOfDayTimeMinutes, ')
           ..write('quietHoursStartMinutes: $quietHoursStartMinutes, ')
           ..write('quietHoursEndMinutes: $quietHoursEndMinutes, ')
+          ..write(
+            'allowStandardNotificationFallback: $allowStandardNotificationFallback, ',
+          )
           ..write('soundEnabled: $soundEnabled, ')
           ..write('vibrationEnabled: $vibrationEnabled, ')
           ..write('updatedAtUtc: $updatedAtUtc')
@@ -2686,6 +2740,7 @@ class ReminderPreferenceRecord extends DataClass
     endOfDayTimeMinutes,
     quietHoursStartMinutes,
     quietHoursEndMinutes,
+    allowStandardNotificationFallback,
     soundEnabled,
     vibrationEnabled,
     updatedAtUtc,
@@ -2701,6 +2756,8 @@ class ReminderPreferenceRecord extends DataClass
           other.endOfDayTimeMinutes == this.endOfDayTimeMinutes &&
           other.quietHoursStartMinutes == this.quietHoursStartMinutes &&
           other.quietHoursEndMinutes == this.quietHoursEndMinutes &&
+          other.allowStandardNotificationFallback ==
+              this.allowStandardNotificationFallback &&
           other.soundEnabled == this.soundEnabled &&
           other.vibrationEnabled == this.vibrationEnabled &&
           other.updatedAtUtc == this.updatedAtUtc);
@@ -2715,6 +2772,7 @@ class ReminderPreferencesCompanion
   final Value<int> endOfDayTimeMinutes;
   final Value<int?> quietHoursStartMinutes;
   final Value<int?> quietHoursEndMinutes;
+  final Value<bool> allowStandardNotificationFallback;
   final Value<bool> soundEnabled;
   final Value<bool> vibrationEnabled;
   final Value<DateTime> updatedAtUtc;
@@ -2727,6 +2785,7 @@ class ReminderPreferencesCompanion
     this.endOfDayTimeMinutes = const Value.absent(),
     this.quietHoursStartMinutes = const Value.absent(),
     this.quietHoursEndMinutes = const Value.absent(),
+    this.allowStandardNotificationFallback = const Value.absent(),
     this.soundEnabled = const Value.absent(),
     this.vibrationEnabled = const Value.absent(),
     this.updatedAtUtc = const Value.absent(),
@@ -2740,6 +2799,7 @@ class ReminderPreferencesCompanion
     required int endOfDayTimeMinutes,
     this.quietHoursStartMinutes = const Value.absent(),
     this.quietHoursEndMinutes = const Value.absent(),
+    this.allowStandardNotificationFallback = const Value.absent(),
     this.soundEnabled = const Value.absent(),
     this.vibrationEnabled = const Value.absent(),
     required DateTime updatedAtUtc,
@@ -2757,6 +2817,7 @@ class ReminderPreferencesCompanion
     Expression<int>? endOfDayTimeMinutes,
     Expression<int>? quietHoursStartMinutes,
     Expression<int>? quietHoursEndMinutes,
+    Expression<bool>? allowStandardNotificationFallback,
     Expression<bool>? soundEnabled,
     Expression<bool>? vibrationEnabled,
     Expression<DateTime>? updatedAtUtc,
@@ -2774,6 +2835,9 @@ class ReminderPreferencesCompanion
         'quiet_hours_start_minutes': quietHoursStartMinutes,
       if (quietHoursEndMinutes != null)
         'quiet_hours_end_minutes': quietHoursEndMinutes,
+      if (allowStandardNotificationFallback != null)
+        'allow_standard_notification_fallback':
+            allowStandardNotificationFallback,
       if (soundEnabled != null) 'sound_enabled': soundEnabled,
       if (vibrationEnabled != null) 'vibration_enabled': vibrationEnabled,
       if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
@@ -2789,6 +2853,7 @@ class ReminderPreferencesCompanion
     Value<int>? endOfDayTimeMinutes,
     Value<int?>? quietHoursStartMinutes,
     Value<int?>? quietHoursEndMinutes,
+    Value<bool>? allowStandardNotificationFallback,
     Value<bool>? soundEnabled,
     Value<bool>? vibrationEnabled,
     Value<DateTime>? updatedAtUtc,
@@ -2803,6 +2868,9 @@ class ReminderPreferencesCompanion
       quietHoursStartMinutes:
           quietHoursStartMinutes ?? this.quietHoursStartMinutes,
       quietHoursEndMinutes: quietHoursEndMinutes ?? this.quietHoursEndMinutes,
+      allowStandardNotificationFallback:
+          allowStandardNotificationFallback ??
+          this.allowStandardNotificationFallback,
       soundEnabled: soundEnabled ?? this.soundEnabled,
       vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
       updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
@@ -2838,6 +2906,11 @@ class ReminderPreferencesCompanion
         quietHoursEndMinutes.value,
       );
     }
+    if (allowStandardNotificationFallback.present) {
+      map['allow_standard_notification_fallback'] = Variable<bool>(
+        allowStandardNotificationFallback.value,
+      );
+    }
     if (soundEnabled.present) {
       map['sound_enabled'] = Variable<bool>(soundEnabled.value);
     }
@@ -2863,6 +2936,9 @@ class ReminderPreferencesCompanion
           ..write('endOfDayTimeMinutes: $endOfDayTimeMinutes, ')
           ..write('quietHoursStartMinutes: $quietHoursStartMinutes, ')
           ..write('quietHoursEndMinutes: $quietHoursEndMinutes, ')
+          ..write(
+            'allowStandardNotificationFallback: $allowStandardNotificationFallback, ',
+          )
           ..write('soundEnabled: $soundEnabled, ')
           ..write('vibrationEnabled: $vibrationEnabled, ')
           ..write('updatedAtUtc: $updatedAtUtc, ')
@@ -3485,6 +3561,525 @@ class ScheduledReminderRequestsCompanion
   }
 }
 
+class $SnoozedReminderRecordsTable extends SnoozedReminderRecords
+    with TableInfo<$SnoozedReminderRecordsTable, SnoozedReminderRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SnoozedReminderRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _occurrenceIdMeta = const VerificationMeta(
+    'occurrenceId',
+  );
+  @override
+  late final GeneratedColumn<String> occurrenceId = GeneratedColumn<String>(
+    'occurrence_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _platformAlarmIdMeta = const VerificationMeta(
+    'platformAlarmId',
+  );
+  @override
+  late final GeneratedColumn<String> platformAlarmId = GeneratedColumn<String>(
+    'platform_alarm_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_profiles (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _parentIdentityMeta = const VerificationMeta(
+    'parentIdentity',
+  );
+  @override
+  late final GeneratedColumn<String> parentIdentity = GeneratedColumn<String>(
+    'parent_identity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES scheduled_reminder_requests (identity) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _contentKindMeta = const VerificationMeta(
+    'contentKind',
+  );
+  @override
+  late final GeneratedColumn<String> contentKind = GeneratedColumn<String>(
+    'content_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scheduledAtUtcMeta = const VerificationMeta(
+    'scheduledAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> scheduledAtUtc =
+      GeneratedColumn<DateTime>(
+        'scheduled_at_utc',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _createdAtUtcMeta = const VerificationMeta(
+    'createdAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAtUtc = GeneratedColumn<DateTime>(
+    'created_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    occurrenceId,
+    platformAlarmId,
+    profileId,
+    parentIdentity,
+    contentKind,
+    scheduledAtUtc,
+    createdAtUtc,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'snoozed_reminder_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SnoozedReminderRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('occurrence_id')) {
+      context.handle(
+        _occurrenceIdMeta,
+        occurrenceId.isAcceptableOrUnknown(
+          data['occurrence_id']!,
+          _occurrenceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_occurrenceIdMeta);
+    }
+    if (data.containsKey('platform_alarm_id')) {
+      context.handle(
+        _platformAlarmIdMeta,
+        platformAlarmId.isAcceptableOrUnknown(
+          data['platform_alarm_id']!,
+          _platformAlarmIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_platformAlarmIdMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('parent_identity')) {
+      context.handle(
+        _parentIdentityMeta,
+        parentIdentity.isAcceptableOrUnknown(
+          data['parent_identity']!,
+          _parentIdentityMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_parentIdentityMeta);
+    }
+    if (data.containsKey('content_kind')) {
+      context.handle(
+        _contentKindMeta,
+        contentKind.isAcceptableOrUnknown(
+          data['content_kind']!,
+          _contentKindMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentKindMeta);
+    }
+    if (data.containsKey('scheduled_at_utc')) {
+      context.handle(
+        _scheduledAtUtcMeta,
+        scheduledAtUtc.isAcceptableOrUnknown(
+          data['scheduled_at_utc']!,
+          _scheduledAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_scheduledAtUtcMeta);
+    }
+    if (data.containsKey('created_at_utc')) {
+      context.handle(
+        _createdAtUtcMeta,
+        createdAtUtc.isAcceptableOrUnknown(
+          data['created_at_utc']!,
+          _createdAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {occurrenceId};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {platformAlarmId},
+  ];
+  @override
+  SnoozedReminderRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SnoozedReminderRecord(
+      occurrenceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}occurrence_id'],
+      )!,
+      platformAlarmId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}platform_alarm_id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      parentIdentity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parent_identity'],
+      )!,
+      contentKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_kind'],
+      )!,
+      scheduledAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}scheduled_at_utc'],
+      )!,
+      createdAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at_utc'],
+      )!,
+    );
+  }
+
+  @override
+  $SnoozedReminderRecordsTable createAlias(String alias) {
+    return $SnoozedReminderRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class SnoozedReminderRecord extends DataClass
+    implements Insertable<SnoozedReminderRecord> {
+  /// Stable local identity, separate from the daily reminder slot identity.
+  final String occurrenceId;
+
+  /// Identifier accepted by the operating system's alarm API.
+  final String platformAlarmId;
+  final String profileId;
+
+  /// Deleting the parent schedule removes its snoozed occurrence in Drift.
+  final String parentIdentity;
+  final String contentKind;
+  final DateTime scheduledAtUtc;
+  final DateTime createdAtUtc;
+  const SnoozedReminderRecord({
+    required this.occurrenceId,
+    required this.platformAlarmId,
+    required this.profileId,
+    required this.parentIdentity,
+    required this.contentKind,
+    required this.scheduledAtUtc,
+    required this.createdAtUtc,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['occurrence_id'] = Variable<String>(occurrenceId);
+    map['platform_alarm_id'] = Variable<String>(platformAlarmId);
+    map['profile_id'] = Variable<String>(profileId);
+    map['parent_identity'] = Variable<String>(parentIdentity);
+    map['content_kind'] = Variable<String>(contentKind);
+    map['scheduled_at_utc'] = Variable<DateTime>(scheduledAtUtc);
+    map['created_at_utc'] = Variable<DateTime>(createdAtUtc);
+    return map;
+  }
+
+  SnoozedReminderRecordsCompanion toCompanion(bool nullToAbsent) {
+    return SnoozedReminderRecordsCompanion(
+      occurrenceId: Value(occurrenceId),
+      platformAlarmId: Value(platformAlarmId),
+      profileId: Value(profileId),
+      parentIdentity: Value(parentIdentity),
+      contentKind: Value(contentKind),
+      scheduledAtUtc: Value(scheduledAtUtc),
+      createdAtUtc: Value(createdAtUtc),
+    );
+  }
+
+  factory SnoozedReminderRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SnoozedReminderRecord(
+      occurrenceId: serializer.fromJson<String>(json['occurrenceId']),
+      platformAlarmId: serializer.fromJson<String>(json['platformAlarmId']),
+      profileId: serializer.fromJson<String>(json['profileId']),
+      parentIdentity: serializer.fromJson<String>(json['parentIdentity']),
+      contentKind: serializer.fromJson<String>(json['contentKind']),
+      scheduledAtUtc: serializer.fromJson<DateTime>(json['scheduledAtUtc']),
+      createdAtUtc: serializer.fromJson<DateTime>(json['createdAtUtc']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'occurrenceId': serializer.toJson<String>(occurrenceId),
+      'platformAlarmId': serializer.toJson<String>(platformAlarmId),
+      'profileId': serializer.toJson<String>(profileId),
+      'parentIdentity': serializer.toJson<String>(parentIdentity),
+      'contentKind': serializer.toJson<String>(contentKind),
+      'scheduledAtUtc': serializer.toJson<DateTime>(scheduledAtUtc),
+      'createdAtUtc': serializer.toJson<DateTime>(createdAtUtc),
+    };
+  }
+
+  SnoozedReminderRecord copyWith({
+    String? occurrenceId,
+    String? platformAlarmId,
+    String? profileId,
+    String? parentIdentity,
+    String? contentKind,
+    DateTime? scheduledAtUtc,
+    DateTime? createdAtUtc,
+  }) => SnoozedReminderRecord(
+    occurrenceId: occurrenceId ?? this.occurrenceId,
+    platformAlarmId: platformAlarmId ?? this.platformAlarmId,
+    profileId: profileId ?? this.profileId,
+    parentIdentity: parentIdentity ?? this.parentIdentity,
+    contentKind: contentKind ?? this.contentKind,
+    scheduledAtUtc: scheduledAtUtc ?? this.scheduledAtUtc,
+    createdAtUtc: createdAtUtc ?? this.createdAtUtc,
+  );
+  SnoozedReminderRecord copyWithCompanion(
+    SnoozedReminderRecordsCompanion data,
+  ) {
+    return SnoozedReminderRecord(
+      occurrenceId: data.occurrenceId.present
+          ? data.occurrenceId.value
+          : this.occurrenceId,
+      platformAlarmId: data.platformAlarmId.present
+          ? data.platformAlarmId.value
+          : this.platformAlarmId,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      parentIdentity: data.parentIdentity.present
+          ? data.parentIdentity.value
+          : this.parentIdentity,
+      contentKind: data.contentKind.present
+          ? data.contentKind.value
+          : this.contentKind,
+      scheduledAtUtc: data.scheduledAtUtc.present
+          ? data.scheduledAtUtc.value
+          : this.scheduledAtUtc,
+      createdAtUtc: data.createdAtUtc.present
+          ? data.createdAtUtc.value
+          : this.createdAtUtc,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SnoozedReminderRecord(')
+          ..write('occurrenceId: $occurrenceId, ')
+          ..write('platformAlarmId: $platformAlarmId, ')
+          ..write('profileId: $profileId, ')
+          ..write('parentIdentity: $parentIdentity, ')
+          ..write('contentKind: $contentKind, ')
+          ..write('scheduledAtUtc: $scheduledAtUtc, ')
+          ..write('createdAtUtc: $createdAtUtc')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    occurrenceId,
+    platformAlarmId,
+    profileId,
+    parentIdentity,
+    contentKind,
+    scheduledAtUtc,
+    createdAtUtc,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SnoozedReminderRecord &&
+          other.occurrenceId == this.occurrenceId &&
+          other.platformAlarmId == this.platformAlarmId &&
+          other.profileId == this.profileId &&
+          other.parentIdentity == this.parentIdentity &&
+          other.contentKind == this.contentKind &&
+          other.scheduledAtUtc == this.scheduledAtUtc &&
+          other.createdAtUtc == this.createdAtUtc);
+}
+
+class SnoozedReminderRecordsCompanion
+    extends UpdateCompanion<SnoozedReminderRecord> {
+  final Value<String> occurrenceId;
+  final Value<String> platformAlarmId;
+  final Value<String> profileId;
+  final Value<String> parentIdentity;
+  final Value<String> contentKind;
+  final Value<DateTime> scheduledAtUtc;
+  final Value<DateTime> createdAtUtc;
+  final Value<int> rowid;
+  const SnoozedReminderRecordsCompanion({
+    this.occurrenceId = const Value.absent(),
+    this.platformAlarmId = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.parentIdentity = const Value.absent(),
+    this.contentKind = const Value.absent(),
+    this.scheduledAtUtc = const Value.absent(),
+    this.createdAtUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SnoozedReminderRecordsCompanion.insert({
+    required String occurrenceId,
+    required String platformAlarmId,
+    required String profileId,
+    required String parentIdentity,
+    required String contentKind,
+    required DateTime scheduledAtUtc,
+    required DateTime createdAtUtc,
+    this.rowid = const Value.absent(),
+  }) : occurrenceId = Value(occurrenceId),
+       platformAlarmId = Value(platformAlarmId),
+       profileId = Value(profileId),
+       parentIdentity = Value(parentIdentity),
+       contentKind = Value(contentKind),
+       scheduledAtUtc = Value(scheduledAtUtc),
+       createdAtUtc = Value(createdAtUtc);
+  static Insertable<SnoozedReminderRecord> custom({
+    Expression<String>? occurrenceId,
+    Expression<String>? platformAlarmId,
+    Expression<String>? profileId,
+    Expression<String>? parentIdentity,
+    Expression<String>? contentKind,
+    Expression<DateTime>? scheduledAtUtc,
+    Expression<DateTime>? createdAtUtc,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (occurrenceId != null) 'occurrence_id': occurrenceId,
+      if (platformAlarmId != null) 'platform_alarm_id': platformAlarmId,
+      if (profileId != null) 'profile_id': profileId,
+      if (parentIdentity != null) 'parent_identity': parentIdentity,
+      if (contentKind != null) 'content_kind': contentKind,
+      if (scheduledAtUtc != null) 'scheduled_at_utc': scheduledAtUtc,
+      if (createdAtUtc != null) 'created_at_utc': createdAtUtc,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SnoozedReminderRecordsCompanion copyWith({
+    Value<String>? occurrenceId,
+    Value<String>? platformAlarmId,
+    Value<String>? profileId,
+    Value<String>? parentIdentity,
+    Value<String>? contentKind,
+    Value<DateTime>? scheduledAtUtc,
+    Value<DateTime>? createdAtUtc,
+    Value<int>? rowid,
+  }) {
+    return SnoozedReminderRecordsCompanion(
+      occurrenceId: occurrenceId ?? this.occurrenceId,
+      platformAlarmId: platformAlarmId ?? this.platformAlarmId,
+      profileId: profileId ?? this.profileId,
+      parentIdentity: parentIdentity ?? this.parentIdentity,
+      contentKind: contentKind ?? this.contentKind,
+      scheduledAtUtc: scheduledAtUtc ?? this.scheduledAtUtc,
+      createdAtUtc: createdAtUtc ?? this.createdAtUtc,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (occurrenceId.present) {
+      map['occurrence_id'] = Variable<String>(occurrenceId.value);
+    }
+    if (platformAlarmId.present) {
+      map['platform_alarm_id'] = Variable<String>(platformAlarmId.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (parentIdentity.present) {
+      map['parent_identity'] = Variable<String>(parentIdentity.value);
+    }
+    if (contentKind.present) {
+      map['content_kind'] = Variable<String>(contentKind.value);
+    }
+    if (scheduledAtUtc.present) {
+      map['scheduled_at_utc'] = Variable<DateTime>(scheduledAtUtc.value);
+    }
+    if (createdAtUtc.present) {
+      map['created_at_utc'] = Variable<DateTime>(createdAtUtc.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SnoozedReminderRecordsCompanion(')
+          ..write('occurrenceId: $occurrenceId, ')
+          ..write('platformAlarmId: $platformAlarmId, ')
+          ..write('profileId: $profileId, ')
+          ..write('parentIdentity: $parentIdentity, ')
+          ..write('contentKind: $contentKind, ')
+          ..write('scheduledAtUtc: $scheduledAtUtc, ')
+          ..write('createdAtUtc: $createdAtUtc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3498,6 +4093,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ReminderPreferencesTable(this);
   late final $ScheduledReminderRequestsTable scheduledReminderRequests =
       $ScheduledReminderRequestsTable(this);
+  late final $SnoozedReminderRecordsTable snoozedReminderRecords =
+      $SnoozedReminderRecordsTable(this);
   late final Index localTasksProfileStartStatusIdx = Index(
     'local_tasks_profile_start_status_idx',
     'CREATE INDEX local_tasks_profile_start_status_idx ON local_tasks (profile_id, start_date, status)',
@@ -3521,6 +4118,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localLifecycleEvents,
     reminderPreferences,
     scheduledReminderRequests,
+    snoozedReminderRecords,
     localTasksProfileStartStatusIdx,
     localProgressProfileTaskTimeIdx,
     localLifecycleProfileTaskTimeIdx,
@@ -3562,6 +4160,24 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [
         TableUpdate('scheduled_reminder_requests', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'local_profiles',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('snoozed_reminder_records', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'scheduled_reminder_requests',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('snoozed_reminder_records', kind: UpdateKind.delete),
       ],
     ),
   ]);
@@ -3704,6 +4320,31 @@ final class $$LocalProfilesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _scheduledReminderRequestsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $SnoozedReminderRecordsTable,
+    List<SnoozedReminderRecord>
+  >
+  _snoozedReminderRecordsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.snoozedReminderRecords,
+        aliasName: 'local_profiles__id__snoozed_reminder_records__profile_id',
+      );
+
+  $$SnoozedReminderRecordsTableProcessedTableManager
+  get snoozedReminderRecordsRefs {
+    final manager = $$SnoozedReminderRecordsTableTableManager(
+      $_db,
+      $_db.snoozedReminderRecords,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _snoozedReminderRecordsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -3858,6 +4499,32 @@ class $$LocalProfilesTableFilterComposer
               }) => $$ScheduledReminderRequestsTableFilterComposer(
                 $db: $db,
                 $table: $db.scheduledReminderRequests,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> snoozedReminderRecordsRefs(
+    Expression<bool> Function($$SnoozedReminderRecordsTableFilterComposer f) f,
+  ) {
+    final $$SnoozedReminderRecordsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.snoozedReminderRecords,
+          getReferencedColumn: (t) => t.profileId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SnoozedReminderRecordsTableFilterComposer(
+                $db: $db,
+                $table: $db.snoozedReminderRecords,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -4054,6 +4721,32 @@ class $$LocalProfilesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> snoozedReminderRecordsRefs<T extends Object>(
+    Expression<T> Function($$SnoozedReminderRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$SnoozedReminderRecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.snoozedReminderRecords,
+          getReferencedColumn: (t) => t.profileId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SnoozedReminderRecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.snoozedReminderRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalProfilesTableTableManager
@@ -4075,6 +4768,7 @@ class $$LocalProfilesTableTableManager
             bool localLifecycleEventsRefs,
             bool reminderPreferencesRefs,
             bool scheduledReminderRequestsRefs,
+            bool snoozedReminderRecordsRefs,
           })
         > {
   $$LocalProfilesTableTableManager(_$AppDatabase db, $LocalProfilesTable table)
@@ -4131,6 +4825,7 @@ class $$LocalProfilesTableTableManager
                 localLifecycleEventsRefs = false,
                 reminderPreferencesRefs = false,
                 scheduledReminderRequestsRefs = false,
+                snoozedReminderRecordsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -4141,6 +4836,7 @@ class $$LocalProfilesTableTableManager
                     if (reminderPreferencesRefs) db.reminderPreferences,
                     if (scheduledReminderRequestsRefs)
                       db.scheduledReminderRequests,
+                    if (snoozedReminderRecordsRefs) db.snoozedReminderRecords,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -4250,6 +4946,27 @@ class $$LocalProfilesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (snoozedReminderRecordsRefs)
+                        await $_getPrefetchedData<
+                          ProfileRecord,
+                          $LocalProfilesTable,
+                          SnoozedReminderRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalProfilesTableReferences
+                              ._snoozedReminderRecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).snoozedReminderRecordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4276,6 +4993,7 @@ typedef $$LocalProfilesTableProcessedTableManager =
         bool localLifecycleEventsRefs,
         bool reminderPreferencesRefs,
         bool scheduledReminderRequestsRefs,
+        bool snoozedReminderRecordsRefs,
       })
     >;
 typedef $$LocalTasksTableCreateCompanionBuilder = LocalTasksCompanion Function({
@@ -5565,6 +6283,7 @@ typedef $$ReminderPreferencesTableCreateCompanionBuilder =
       required int endOfDayTimeMinutes,
       Value<int?> quietHoursStartMinutes,
       Value<int?> quietHoursEndMinutes,
+      Value<bool> allowStandardNotificationFallback,
       Value<bool> soundEnabled,
       Value<bool> vibrationEnabled,
       required DateTime updatedAtUtc,
@@ -5579,6 +6298,7 @@ typedef $$ReminderPreferencesTableUpdateCompanionBuilder =
       Value<int> endOfDayTimeMinutes,
       Value<int?> quietHoursStartMinutes,
       Value<int?> quietHoursEndMinutes,
+      Value<bool> allowStandardNotificationFallback,
       Value<bool> soundEnabled,
       Value<bool> vibrationEnabled,
       Value<DateTime> updatedAtUtc,
@@ -5655,6 +6375,12 @@ class $$ReminderPreferencesTableFilterComposer
     column: $table.quietHoursEndMinutes,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<bool> get allowStandardNotificationFallback =>
+      $composableBuilder(
+        column: $table.allowStandardNotificationFallback,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<bool> get soundEnabled => $composableBuilder(
     column: $table.soundEnabled,
@@ -5734,6 +6460,12 @@ class $$ReminderPreferencesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get allowStandardNotificationFallback =>
+      $composableBuilder(
+        column: $table.allowStandardNotificationFallback,
+        builder: (column) => ColumnOrderings(column),
+      );
+
   ColumnOrderings<bool> get soundEnabled => $composableBuilder(
     column: $table.soundEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -5809,6 +6541,12 @@ class $$ReminderPreferencesTableAnnotationComposer
     column: $table.quietHoursEndMinutes,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get allowStandardNotificationFallback =>
+      $composableBuilder(
+        column: $table.allowStandardNotificationFallback,
+        builder: (column) => column,
+      );
 
   GeneratedColumn<bool> get soundEnabled => $composableBuilder(
     column: $table.soundEnabled,
@@ -5892,6 +6630,8 @@ class $$ReminderPreferencesTableTableManager
                 Value<int> endOfDayTimeMinutes = const Value.absent(),
                 Value<int?> quietHoursStartMinutes = const Value.absent(),
                 Value<int?> quietHoursEndMinutes = const Value.absent(),
+                Value<bool> allowStandardNotificationFallback =
+                    const Value.absent(),
                 Value<bool> soundEnabled = const Value.absent(),
                 Value<bool> vibrationEnabled = const Value.absent(),
                 Value<DateTime> updatedAtUtc = const Value.absent(),
@@ -5904,6 +6644,8 @@ class $$ReminderPreferencesTableTableManager
                 endOfDayTimeMinutes: endOfDayTimeMinutes,
                 quietHoursStartMinutes: quietHoursStartMinutes,
                 quietHoursEndMinutes: quietHoursEndMinutes,
+                allowStandardNotificationFallback:
+                    allowStandardNotificationFallback,
                 soundEnabled: soundEnabled,
                 vibrationEnabled: vibrationEnabled,
                 updatedAtUtc: updatedAtUtc,
@@ -5918,6 +6660,8 @@ class $$ReminderPreferencesTableTableManager
                 required int endOfDayTimeMinutes,
                 Value<int?> quietHoursStartMinutes = const Value.absent(),
                 Value<int?> quietHoursEndMinutes = const Value.absent(),
+                Value<bool> allowStandardNotificationFallback =
+                    const Value.absent(),
                 Value<bool> soundEnabled = const Value.absent(),
                 Value<bool> vibrationEnabled = const Value.absent(),
                 required DateTime updatedAtUtc,
@@ -5930,6 +6674,8 @@ class $$ReminderPreferencesTableTableManager
                 endOfDayTimeMinutes: endOfDayTimeMinutes,
                 quietHoursStartMinutes: quietHoursStartMinutes,
                 quietHoursEndMinutes: quietHoursEndMinutes,
+                allowStandardNotificationFallback:
+                    allowStandardNotificationFallback,
                 soundEnabled: soundEnabled,
                 vibrationEnabled: vibrationEnabled,
                 updatedAtUtc: updatedAtUtc,
@@ -6061,6 +6807,36 @@ final class $$ScheduledReminderRequestsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<
+    $SnoozedReminderRecordsTable,
+    List<SnoozedReminderRecord>
+  >
+  _snoozedReminderRecordsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.snoozedReminderRecords,
+        aliasName: 'scheduled_reminder_requests__identity__snoozed_reminder_records__parent_identity',
+      );
+
+  $$SnoozedReminderRecordsTableProcessedTableManager
+  get snoozedReminderRecordsRefs {
+    final manager =
+        $$SnoozedReminderRecordsTableTableManager(
+          $_db,
+          $_db.snoozedReminderRecords,
+        ).filter(
+          (f) => f.parentIdentity.identity.sqlEquals(
+            $_itemColumn<String>('identity')!,
+          ),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _snoozedReminderRecordsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ScheduledReminderRequestsTableFilterComposer
@@ -6133,6 +6909,32 @@ class $$ScheduledReminderRequestsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> snoozedReminderRecordsRefs(
+    Expression<bool> Function($$SnoozedReminderRecordsTableFilterComposer f) f,
+  ) {
+    final $$SnoozedReminderRecordsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.identity,
+          referencedTable: $db.snoozedReminderRecords,
+          getReferencedColumn: (t) => t.parentIdentity,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SnoozedReminderRecordsTableFilterComposer(
+                $db: $db,
+                $table: $db.snoozedReminderRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
   }
 }
 
@@ -6274,6 +7076,32 @@ class $$ScheduledReminderRequestsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> snoozedReminderRecordsRefs<T extends Object>(
+    Expression<T> Function($$SnoozedReminderRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$SnoozedReminderRecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.identity,
+          referencedTable: $db.snoozedReminderRecords,
+          getReferencedColumn: (t) => t.parentIdentity,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SnoozedReminderRecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.snoozedReminderRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$ScheduledReminderRequestsTableTableManager
@@ -6292,7 +7120,10 @@ class $$ScheduledReminderRequestsTableTableManager
             $$ScheduledReminderRequestsTableReferences,
           ),
           ScheduledReminderRequestRecord,
-          PrefetchHooks Function({bool profileId})
+          PrefetchHooks Function({
+            bool profileId,
+            bool snoozedReminderRecordsRefs,
+          })
         > {
   $$ScheduledReminderRequestsTableTableManager(
     _$AppDatabase db,
@@ -6375,7 +7206,504 @@ class $$ScheduledReminderRequestsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({profileId = false}) {
+          prefetchHooksCallback:
+              ({profileId = false, snoozedReminderRecordsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (snoozedReminderRecordsRefs) db.snoozedReminderRecords,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (profileId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.profileId,
+                            referencedTable:
+                                $$ScheduledReminderRequestsTableReferences
+                                    ._profileIdTable(db),
+                            referencedColumn:
+                                $$ScheduledReminderRequestsTableReferences
+                                    ._profileIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (snoozedReminderRecordsRefs)
+                        await $_getPrefetchedData<
+                          ScheduledReminderRequestRecord,
+                          $ScheduledReminderRequestsTable,
+                          SnoozedReminderRecord
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$ScheduledReminderRequestsTableReferences
+                                  ._snoozedReminderRecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ScheduledReminderRequestsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).snoozedReminderRecordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.parentIdentity == item.identity,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ScheduledReminderRequestsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ScheduledReminderRequestsTable,
+      ScheduledReminderRequestRecord,
+      $$ScheduledReminderRequestsTableFilterComposer,
+      $$ScheduledReminderRequestsTableOrderingComposer,
+      $$ScheduledReminderRequestsTableAnnotationComposer,
+      $$ScheduledReminderRequestsTableCreateCompanionBuilder,
+      $$ScheduledReminderRequestsTableUpdateCompanionBuilder,
+      (
+        ScheduledReminderRequestRecord,
+        $$ScheduledReminderRequestsTableReferences,
+      ),
+      ScheduledReminderRequestRecord,
+      PrefetchHooks Function({bool profileId, bool snoozedReminderRecordsRefs})
+    >;
+typedef $$SnoozedReminderRecordsTableCreateCompanionBuilder =
+    SnoozedReminderRecordsCompanion Function({
+      required String occurrenceId,
+      required String platformAlarmId,
+      required String profileId,
+      required String parentIdentity,
+      required String contentKind,
+      required DateTime scheduledAtUtc,
+      required DateTime createdAtUtc,
+      Value<int> rowid,
+    });
+typedef $$SnoozedReminderRecordsTableUpdateCompanionBuilder =
+    SnoozedReminderRecordsCompanion Function({
+      Value<String> occurrenceId,
+      Value<String> platformAlarmId,
+      Value<String> profileId,
+      Value<String> parentIdentity,
+      Value<String> contentKind,
+      Value<DateTime> scheduledAtUtc,
+      Value<DateTime> createdAtUtc,
+      Value<int> rowid,
+    });
+
+final class $$SnoozedReminderRecordsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $SnoozedReminderRecordsTable,
+          SnoozedReminderRecord
+        > {
+  $$SnoozedReminderRecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalProfilesTable _profileIdTable(_$AppDatabase db) => db
+      .localProfiles
+      .createAlias('snoozed_reminder_records__profile_id__local_profiles__id');
+
+  $$LocalProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<String>('profile_id')!;
+
+    final manager = $$LocalProfilesTableTableManager(
+      $_db,
+      $_db.localProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ScheduledReminderRequestsTable _parentIdentityTable(
+    _$AppDatabase db,
+  ) => db.scheduledReminderRequests.createAlias(
+    'snoozed_reminder_records__parent_identity__scheduled_reminder_requests__identity',
+  );
+
+  $$ScheduledReminderRequestsTableProcessedTableManager get parentIdentity {
+    final $_column = $_itemColumn<String>('parent_identity')!;
+
+    final manager = $$ScheduledReminderRequestsTableTableManager(
+      $_db,
+      $_db.scheduledReminderRequests,
+    ).filter((f) => f.identity.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_parentIdentityTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SnoozedReminderRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $SnoozedReminderRecordsTable> {
+  $$SnoozedReminderRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get occurrenceId => $composableBuilder(
+    column: $table.occurrenceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get platformAlarmId => $composableBuilder(
+    column: $table.platformAlarmId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentKind => $composableBuilder(
+    column: $table.contentKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get scheduledAtUtc => $composableBuilder(
+    column: $table.scheduledAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalProfilesTableFilterComposer get profileId {
+    final $$LocalProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.localProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.localProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ScheduledReminderRequestsTableFilterComposer get parentIdentity {
+    final $$ScheduledReminderRequestsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.parentIdentity,
+          referencedTable: $db.scheduledReminderRequests,
+          getReferencedColumn: (t) => t.identity,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ScheduledReminderRequestsTableFilterComposer(
+                $db: $db,
+                $table: $db.scheduledReminderRequests,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$SnoozedReminderRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SnoozedReminderRecordsTable> {
+  $$SnoozedReminderRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get occurrenceId => $composableBuilder(
+    column: $table.occurrenceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get platformAlarmId => $composableBuilder(
+    column: $table.platformAlarmId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentKind => $composableBuilder(
+    column: $table.contentKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get scheduledAtUtc => $composableBuilder(
+    column: $table.scheduledAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalProfilesTableOrderingComposer get profileId {
+    final $$LocalProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.localProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.localProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ScheduledReminderRequestsTableOrderingComposer get parentIdentity {
+    final $$ScheduledReminderRequestsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.parentIdentity,
+          referencedTable: $db.scheduledReminderRequests,
+          getReferencedColumn: (t) => t.identity,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ScheduledReminderRequestsTableOrderingComposer(
+                $db: $db,
+                $table: $db.scheduledReminderRequests,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$SnoozedReminderRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SnoozedReminderRecordsTable> {
+  $$SnoozedReminderRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get occurrenceId => $composableBuilder(
+    column: $table.occurrenceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get platformAlarmId => $composableBuilder(
+    column: $table.platformAlarmId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentKind => $composableBuilder(
+    column: $table.contentKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get scheduledAtUtc => $composableBuilder(
+    column: $table.scheduledAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => column,
+  );
+
+  $$LocalProfilesTableAnnotationComposer get profileId {
+    final $$LocalProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.localProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ScheduledReminderRequestsTableAnnotationComposer get parentIdentity {
+    final $$ScheduledReminderRequestsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.parentIdentity,
+          referencedTable: $db.scheduledReminderRequests,
+          getReferencedColumn: (t) => t.identity,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ScheduledReminderRequestsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.scheduledReminderRequests,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$SnoozedReminderRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SnoozedReminderRecordsTable,
+          SnoozedReminderRecord,
+          $$SnoozedReminderRecordsTableFilterComposer,
+          $$SnoozedReminderRecordsTableOrderingComposer,
+          $$SnoozedReminderRecordsTableAnnotationComposer,
+          $$SnoozedReminderRecordsTableCreateCompanionBuilder,
+          $$SnoozedReminderRecordsTableUpdateCompanionBuilder,
+          (SnoozedReminderRecord, $$SnoozedReminderRecordsTableReferences),
+          SnoozedReminderRecord,
+          PrefetchHooks Function({bool profileId, bool parentIdentity})
+        > {
+  $$SnoozedReminderRecordsTableTableManager(
+    _$AppDatabase db,
+    $SnoozedReminderRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SnoozedReminderRecordsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$SnoozedReminderRecordsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$SnoozedReminderRecordsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> occurrenceId = const Value.absent(),
+                Value<String> platformAlarmId = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
+                Value<String> parentIdentity = const Value.absent(),
+                Value<String> contentKind = const Value.absent(),
+                Value<DateTime> scheduledAtUtc = const Value.absent(),
+                Value<DateTime> createdAtUtc = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SnoozedReminderRecordsCompanion(
+                occurrenceId: occurrenceId,
+                platformAlarmId: platformAlarmId,
+                profileId: profileId,
+                parentIdentity: parentIdentity,
+                contentKind: contentKind,
+                scheduledAtUtc: scheduledAtUtc,
+                createdAtUtc: createdAtUtc,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String occurrenceId,
+                required String platformAlarmId,
+                required String profileId,
+                required String parentIdentity,
+                required String contentKind,
+                required DateTime scheduledAtUtc,
+                required DateTime createdAtUtc,
+                Value<int> rowid = const Value.absent(),
+              }) => SnoozedReminderRecordsCompanion.insert(
+                occurrenceId: occurrenceId,
+                platformAlarmId: platformAlarmId,
+                profileId: profileId,
+                parentIdentity: parentIdentity,
+                contentKind: contentKind,
+                scheduledAtUtc: scheduledAtUtc,
+                createdAtUtc: createdAtUtc,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $SnoozedReminderRecordsTable,
+                    SnoozedReminderRecord
+                  >(table),
+                  $$SnoozedReminderRecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({profileId = false, parentIdentity = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -6399,13 +7727,24 @@ class $$ScheduledReminderRequestsTableTableManager
                       state = state.withJoin(
                         currentTable: table,
                         currentColumn: table.profileId,
-                        referencedTable:
-                            $$ScheduledReminderRequestsTableReferences
-                                ._profileIdTable(db),
+                        referencedTable: $$SnoozedReminderRecordsTableReferences
+                            ._profileIdTable(db),
                         referencedColumn:
-                            $$ScheduledReminderRequestsTableReferences
+                            $$SnoozedReminderRecordsTableReferences
                                 ._profileIdTable(db)
                                 .id,
+                      ) as T;
+                    }
+                    if (parentIdentity) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.parentIdentity,
+                        referencedTable: $$SnoozedReminderRecordsTableReferences
+                            ._parentIdentityTable(db),
+                        referencedColumn:
+                            $$SnoozedReminderRecordsTableReferences
+                                ._parentIdentityTable(db)
+                                .identity,
                       ) as T;
                     }
 
@@ -6420,22 +7759,19 @@ class $$ScheduledReminderRequestsTableTableManager
       );
 }
 
-typedef $$ScheduledReminderRequestsTableProcessedTableManager =
+typedef $$SnoozedReminderRecordsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $ScheduledReminderRequestsTable,
-      ScheduledReminderRequestRecord,
-      $$ScheduledReminderRequestsTableFilterComposer,
-      $$ScheduledReminderRequestsTableOrderingComposer,
-      $$ScheduledReminderRequestsTableAnnotationComposer,
-      $$ScheduledReminderRequestsTableCreateCompanionBuilder,
-      $$ScheduledReminderRequestsTableUpdateCompanionBuilder,
-      (
-        ScheduledReminderRequestRecord,
-        $$ScheduledReminderRequestsTableReferences,
-      ),
-      ScheduledReminderRequestRecord,
-      PrefetchHooks Function({bool profileId})
+      $SnoozedReminderRecordsTable,
+      SnoozedReminderRecord,
+      $$SnoozedReminderRecordsTableFilterComposer,
+      $$SnoozedReminderRecordsTableOrderingComposer,
+      $$SnoozedReminderRecordsTableAnnotationComposer,
+      $$SnoozedReminderRecordsTableCreateCompanionBuilder,
+      $$SnoozedReminderRecordsTableUpdateCompanionBuilder,
+      (SnoozedReminderRecord, $$SnoozedReminderRecordsTableReferences),
+      SnoozedReminderRecord,
+      PrefetchHooks Function({bool profileId, bool parentIdentity})
     >;
 
 class $AppDatabaseManager {
@@ -6455,5 +7791,10 @@ class $AppDatabaseManager {
       $$ScheduledReminderRequestsTableTableManager(
         _db,
         _db.scheduledReminderRequests,
+      );
+  $$SnoozedReminderRecordsTableTableManager get snoozedReminderRecords =>
+      $$SnoozedReminderRecordsTableTableManager(
+        _db,
+        _db.snoozedReminderRecords,
       );
 }

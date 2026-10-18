@@ -45,6 +45,7 @@ final class ReminderPreferences {
     required this.endOfDayTime,
     this.quietHoursStart,
     this.quietHoursEnd,
+    this.allowStandardNotificationFallback = false,
     required this.soundEnabled,
     required this.vibrationEnabled,
     required this.updatedAtUtc,
@@ -59,6 +60,7 @@ final class ReminderPreferences {
     morningTime: ReminderTime(9 * 60),
     middayTime: ReminderTime(12 * 60),
     endOfDayTime: ReminderTime(22 * 60),
+    allowStandardNotificationFallback: false,
     soundEnabled: true,
     vibrationEnabled: true,
     updatedAtUtc: updatedAtUtc.toUtc(),
@@ -71,6 +73,9 @@ final class ReminderPreferences {
   final ReminderTime endOfDayTime;
   final ReminderTime? quietHoursStart;
   final ReminderTime? quietHoursEnd;
+  /// Whether a regular notification may replace an unavailable alarm.
+  /// Disabled by default so the app never silently downgrades alarm delivery.
+  final bool allowStandardNotificationFallback;
   final bool soundEnabled;
   final bool vibrationEnabled;
   final DateTime updatedAtUtc;

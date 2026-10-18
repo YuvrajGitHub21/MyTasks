@@ -1,12 +1,17 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as timezone;
 
+import '../../domain/entities/reminder_preferences.dart';
 import '../../domain/entities/reminder_request.dart';
 import '../../domain/entities/scheduled_reminder_record.dart';
+import '../../domain/repositories/reminder_preferences_repository.dart';
 import '../../domain/repositories/scheduled_reminder_repository.dart';
+import '../../domain/services/alarm_permission_gateway.dart';
 import '../../domain/services/notification_scheduler.dart';
+import 'android_task_alarm_channel.dart';
 
 /// OS notification adapter backed by flutter_local_notifications.
 ///
@@ -14,16 +19,24 @@ import '../../domain/services/notification_scheduler.dart';
 /// records before calling the OS makes a later reconciliation safe to retry.
 final class FlutterLocalNotificationScheduler implements NotificationScheduler {
   FlutterLocalNotificationScheduler({
-    required FlutterLocalNotificationsPlugin plugin,
-    required ScheduledReminderRepository repository,
-  }) : _plugin = plugin,
-       _repository = repository;
+    required this._plugin,
+    required this._repository,
+    required this._preferencesRepository,
+    required this._alarmPermissionGateway,
+    AndroidTaskAlarmChannel? alarmChannel,
+    TargetPlatform? platform,
+  }) : _alarmChannel = alarmChannel ?? AndroidTaskAlarmChannel(),
+       _platform = platform ?? defaultTargetPlatform;
 
   static const _channelId = 'task_reminders';
   static const _timeZoneName = 'Asia/Kolkata';
 
   final FlutterLocalNotificationsPlugin _plugin;
   final ScheduledReminderRepository _repository;
+  final ReminderPreferencesRepository _preferencesRepository;
+  final AlarmPermissionGateway _alarmPermissionGateway;
+  final AndroidTaskAlarmChannel _alarmChannel;
+  final TargetPlatform _platform;
 
   @override
   Future<void> replaceScheduledRequests(
@@ -56,7 +69,7 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
         .where((record) => !desiredIdentities.contains(record.request.identity))
         .toList(growable: false);
     for (final record in staleRecords) {
-      await _plugin.cancel(id: record.notificationId);
+      await _cancelOnPlatforms(record.notificationId);
     }
     if (staleRecords.isNotEmpty) {
       await _repository.deleteRequests(
@@ -67,10 +80,50 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
       );
     }
 
-    // Reusing the stable ID replaces an existing OS request instead of
-    // creating duplicates. Repeating this loop after a crash is safe.
+    final preferences =
+        await _preferencesRepository.getPreferences(profileId) ??
+        ReminderPreferences.defaults(
+          profileId: profileId,
+          updatedAtUtc: DateTime.now().toUtc(),
+        );
+    final hasActionableReminders = records.any(
+      (record) =>
+          record.request.contentKind != ReminderContentKind.dailySummary,
+    );
+    final exactAlarmAllowed =
+        _platform == TargetPlatform.android &&
+        hasActionableReminders &&
+        await _alarmPermissionGateway.getStatus() ==
+            AlarmPermissionStatus.allowed;
+
+    // Stable IDs replace previous requests, making reconciliation safe to retry.
     for (final record in records) {
-      await _schedule(record);
+      final request = record.request;
+      final isActionable =
+          request.contentKind != ReminderContentKind.dailySummary;
+      final shouldUseAlarm = isActionable && exactAlarmAllowed;
+      final canUseStandardNotification =
+          !isActionable || preferences.allowStandardNotificationFallback;
+
+      if (shouldUseAlarm) {
+        await _plugin.cancel(id: record.notificationId);
+        try {
+          await _scheduleAlarm(record);
+        } catch (_) {
+          // Permission can be revoked between the status check and scheduling.
+          // A regular notification is used only after the user's explicit opt-in.
+          await _alarmChannel.cancel(record.notificationId);
+          if (!preferences.allowStandardNotificationFallback) rethrow;
+          await _scheduleNotification(record);
+        }
+      } else if (canUseStandardNotification) {
+        if (_platform == TargetPlatform.android) {
+          await _alarmChannel.cancel(record.notificationId);
+        }
+        await _scheduleNotification(record);
+      } else {
+        await _cancelOnPlatforms(record.notificationId);
+      }
     }
   }
 
@@ -82,7 +135,7 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
 
     final records = await _repository.getRequests(profileId);
     for (final record in records) {
-      await _plugin.cancel(id: record.notificationId);
+      await _cancelOnPlatforms(record.notificationId);
     }
     if (records.isNotEmpty) {
       await _repository.deleteRequests(
@@ -92,7 +145,7 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
     }
   }
 
-  Future<void> _schedule(ScheduledReminderRecord record) async {
+  Future<void> _scheduleNotification(ScheduledReminderRecord record) async {
     final request = record.request;
     final content = _contentFor(request);
     final scheduledDate = timezone.TZDateTime.from(
@@ -123,6 +176,31 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
       }),
     );
   }
+
+  Future<void> _scheduleAlarm(ScheduledReminderRecord record) async {
+    final request = record.request;
+    final content = _contentFor(request);
+    await _alarmChannel.schedule(
+      id: record.notificationId,
+      scheduledAtUtc: request.scheduledAtUtc,
+      title: content.title,
+      body: content.body,
+      payload: _payloadFor(request),
+    );
+  }
+
+  Future<void> _cancelOnPlatforms(int id) async {
+    await _plugin.cancel(id: id);
+    if (_platform == TargetPlatform.android) {
+      await _alarmChannel.cancel(id);
+    }
+  }
+
+  String _payloadFor(ReminderRequest request) => jsonEncode({
+    'version': 1,
+    'contentKind': request.contentKind.name,
+    'identity': request.identity,
+  });
 
   _ReminderContent _contentFor(ReminderRequest request) =>
       switch (request.contentKind) {

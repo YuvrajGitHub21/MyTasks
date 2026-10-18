@@ -58,6 +58,9 @@ final class DriftReminderPreferencesRepository
             quietHoursEndMinutes: Value(
               preferences.quietHoursEnd?.minutesAfterMidnight,
             ),
+            allowStandardNotificationFallback: Value(
+              preferences.allowStandardNotificationFallback,
+            ),
             soundEnabled: Value(preferences.soundEnabled),
             vibrationEnabled: Value(preferences.vibrationEnabled),
             updatedAtUtc: Value(preferences.updatedAtUtc.toUtc()),
@@ -78,6 +81,8 @@ final class DriftReminderPreferencesRepository
         quietHoursEnd: row.quietHoursEndMinutes == null
             ? null
             : domain.ReminderTime(row.quietHoursEndMinutes!),
+        allowStandardNotificationFallback:
+            row.allowStandardNotificationFallback,
         soundEnabled: row.soundEnabled,
         vibrationEnabled: row.vibrationEnabled,
         updatedAtUtc: row.updatedAtUtc.toUtc(),

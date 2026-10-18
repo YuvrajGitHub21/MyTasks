@@ -1,10 +1,10 @@
 # High-Level Design (HLD)
 
 **Project:** Personal and public task planning mobile application  
-**Document status:** Reviewed; implementation baseline selected  
-**Version:** 0.4  
-**Date:** 16 October 2026  
-**Requirements baseline:** [FRS.md](FRS.md) version 0.5
+**Document status:** Reviewed; implementation baseline updated for alarm-style reminders  
+**Version:** 0.5  
+**Date:** 18 October 2026  
+**Requirements baseline:** [FRS.md](FRS.md) version 0.7
 
 ## 1. Purpose
 
@@ -32,7 +32,7 @@ This structure supports a personal prototype without requiring microservices. Th
 | Privacy baseline | No advertising/cross-app tracking or product analytics in MVP; optional content-redacted crash diagnostics default off | Minimizes personal-data collection and avoids adding tracking SDKs before a clear need exists. |
 | Platform baseline | Android 7.0/API 24 and iOS 15 minimum; target current store-required SDKs at submission | Matches Flutter's supported mobile platform floor in the current support matrix; store target SDK rules continue to move. [Flutter platform support](https://docs.flutter.dev/reference/supported-platforms), [Google Play target API](https://support.google.com/googleplay/android-developer/answer/11926878) |
 | Account deletion | In-app request and public web request page; active primary data removed within 7 calendar days; backups expire within 30 days | Meets platform deletion control direction and makes retention clear. Google Play requires an external web resource as well as an in-app path for account creation. [Apple deletion guidance](https://developer.apple.com/help/app-review/guideline-reference/5-1-1-account-deletion/), [Google Play deletion requirements](https://support.google.com/googleplay/android-developer/answer/13327111) |
-| Notifications | Local reminders for guest mode; server-evaluated push reminders for signed-in users, with local fallback where practical | Server can evaluate account state at reminder time; guest data is unavailable to the server. OS delivery and dismissal remain under user/system control. |
+| Reminders and alarms | Guest alarm prompts are scheduled locally; signed-in alarm prompts will use each device's synchronized task state, with server push reserved for supplemental summaries | The device OS is required for alarm-style presentation; push is not a clock-level alarm. Authorization and OEM behavior remain user/system controlled. |
 | Backend shape | Start with one deployable API plus worker process; Cloud Run scales stateless instances; cap instances to protect PostgreSQL | Avoids premature microservices while allowing horizontal scaling. [Cloud Run autoscaling](https://docs.cloud.google.com/run/docs/about-instance-autoscaling) |
 
 ## 3. Goals, scope, and assumptions
@@ -82,7 +82,7 @@ flowchart LR
     DB[(Managed PostgreSQL)]
     JOB[Notification / sync worker]
     PUSH[FCM / APNs]
-    OS[Mobile notification system]
+    OS[Mobile alarm and notification systems]
 
     U <--> A
     A <--> L
@@ -248,21 +248,21 @@ API responses should include stable resource IDs, server versions, and machine-r
 - Product time zone: India Standard Time for the first release.
 - No-active-task reminders: 9:00 AM and 12:00 PM, evaluated against tasks active today.
 - End-of-day reminder: 10:00 PM if a task is active/incomplete and has no progress log dated today. One progress log for that task is sufficient to suppress it.
-- User settings can change supported reminder times, quiet hours, and sound/vibration preferences.
+- User settings can change reminder times and quiet hours. The OS owns the alarm sound/vibration controls.
 - Lock-screen task summary is privacy-safe, e.g. “You have 3 tasks today”; do not include task names by default.
 
 ### 8.2 Account and guest behavior
 
-- Signed-in users: server worker evaluates current cloud state near reminder time and sends a push to registered devices that opted in. Push is best effort; device permission, connectivity, battery policy, and provider delivery affect arrival.
-- Guest users: app schedules local notifications from the local task store and recalculates schedules after every task/progress mutation and when the app starts. Reminders are best effort if the OS suppresses background work or notification permission is unavailable.
+- Guest users: the app schedules local platform alarms from the encrypted task store and recalculates after every task/progress mutation and when the app starts. Alarm scheduling runs through OS facilities and does not require a resident Flutter process; user force-stop, manufacturer restrictions, authorization, and OS policy can still prevent delivery.
+- Signed-in users (M6): the server evaluates account state and may send ordinary push summaries. For alarm-style prompts, each device schedules from its synchronized local task state so the platform alarm API, rather than push delivery, provides the alert presentation. Device authorization and OEM battery policy still apply.
 - After offline account edits, the device also refreshes its local reminder schedule; server schedules reconcile after sync.
 - Deduplicate jobs by user, device, reminder type, and local date.
 
-### 8.3 Persistent notification constraint
+### 8.3 Alarm presentation and platform constraints
 
-The mobile operating system owns notification display and controls. Android may show an ongoing notification only for an appropriate user-visible foreground operation; Android provides users a system workflow to stop apps with foreground services. [Android foreground-service stop controls](https://developer.android.com/develop/background-work/services/fgs/handle-user-stopping). iOS local notifications are presented through the system notification interface, where users can dismiss them. [Apple local notification behavior](https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/SchedulingandHandlingLocalNotifications.html). Therefore, the app cannot guarantee an always-visible, impossible-to-dismiss task notification on both platforms.
+The app separates an informational daily summary from actionable alarm-style prompts. Alarm prompts provide platform-managed audible alert presentation and Open, Snooze, and Stop/Dismiss actions. Android exact alarms require the applicable “Alarms & reminders” authorization on supported OS versions; request it only after explaining why. If declined, report that alarms are unavailable and offer standard notifications only as an explicit opt-in. Android full-screen presentation is conditional on system access and app-store eligibility; do not assume every reminder app qualifies. See [Android exact-alarm policy](https://developer.android.com/about/versions/14/changes/schedule-exact-alarms) and [full-screen intent limits](https://developer.android.com/about/versions/14/behavior-changes-14).
 
-For iOS, use the standard daily summary and scheduled reminders. For Android, evaluate an ongoing notification only while there is a valid foreground-service use case and make it user-controllable. This behavior needs a platform-specific prototype before release.
+For iOS 26 and later, evaluate Apple's AlarmKit for authorized alarm presentation; on iOS 15–25 or after denial, offer standard local notifications only as an explicit opt-in fallback. AlarmKit authorization is separate from notification permission. See [AlarmKit](https://developer.apple.com/documentation/AlarmKit). Do not use an ongoing foreground service just to keep scheduling alive; Android may use a short-lived, user-visible alarm playback component only while an alarm is actively ringing if platform implementation requires it. Keep the standard daily summary dismissible and privacy-safe on both platforms.
 
 ## 9. Security and privacy
 
@@ -324,8 +324,8 @@ Then derive API throughput, database IOPS/storage, queue backlog tolerance, and 
 | Risk | Impact | Mitigation |
 |---|---|---|
 | Offline sync is more complex than a single-user local app | Lost or duplicated edits | Versioned mutation API, idempotency keys, conflict UX, and an early sync prototype. |
-| Reminder delivery/background execution varies by OS | A reminder may be late or absent | Use OS-supported local/push mechanisms, permission onboarding, device testing, and describe reminders as best effort. |
-| User expects truly undismissable cross-platform notification | Cannot guarantee on both platforms | Document platform behavior; prototype Android ongoing notification and use standard iOS notifications. |
+| Alarm authorization, OEM policy, or exact scheduling is unavailable | An alarm may be unavailable or delayed | Request platform authorization in context, offer standard notifications only as an explicit opt-in, test Xiaomi/MIUI and other devices, and disclose limitations. |
+| Android full-screen alarm presentation is denied by system or distribution policy | The alarm may appear as a heads-up/notification instead of opening over the lock screen | Keep Open/Snooze/Stop actions available in the system UI; only request full-screen access when the app qualifies. |
 | “10 million users” is not a traffic profile | Over/under-building | Get DAU/peak assumptions and capacity-test in stages before selecting database topology. |
 | Hard deletion conflicts with offline devices/backups | Deleted data may reappear or persist temporarily in backups | Sync tombstones, reject late writes, cascade delete, and define bounded tombstone/backup retention. |
 | Reminder fan-out can exceed default queue capacity at high active-user counts | Late reminders or backlog | Load-test opt-in volume; partition queues, request quota changes, or move to batched sharded delivery before scale requires it. Cloud Tasks documents a default 500 dispatches/sec per queue. [Cloud Tasks quotas](https://docs.cloud.google.com/tasks/docs/quotas) |
@@ -378,3 +378,4 @@ Then derive API throughput, database IOPS/storage, queue backlog tolerance, and 
 | 0.2 | 15 October 2026 | User approved HLD and delegated implementation choices; selected Flutter packages, NestJS/TypeScript, PostgreSQL, Google Cloud Mumbai, Cloud Tasks, and SQLCipher local encryption. |
 | 0.3 | 15 October 2026 | User chose Java; replaced NestJS/TypeScript with Java 25 LTS and Spring Boot while retaining the rest of the architecture. |
 | 0.4 | 16 October 2026 | Set minimum OS and privacy/retention defaults; added iOS Sign in with Apple and platform-aligned account deletion. |
+| 0.5 | 18 October 2026 | Updated reminder architecture for local alarm-style prompts, Android exact-alarm authorization, and iOS AlarmKit with an explicit opt-in notification fallback. |

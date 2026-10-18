@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/alarm_permission_provider.dart';
 import '../../../app/notification_permission_provider.dart';
 import '../../../app/reminder_settings_providers.dart';
 import '../../../app/reminder_use_case_providers.dart';
 import '../../../domain/entities/reminder_preferences.dart';
+import '../../../domain/services/alarm_permission_gateway.dart';
 import '../../../domain/services/notification_permission_gateway.dart';
 
 /// Explains local reminders and lets the user manage app preference and OS
@@ -35,12 +37,14 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(notificationPermissionStatusProvider);
+      ref.invalidate(alarmPermissionStatusProvider);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final permission = ref.watch(notificationPermissionStatusProvider);
+    final alarmPermission = ref.watch(alarmPermissionStatusProvider);
     final preferences = ref.watch(reminderSettingsPreferencesProvider);
 
     return Scaffold(
@@ -178,6 +182,25 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                           _pickQuietHoursTime(context, saved, isStart: false),
                     ),
                   ],
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    title: const Text('Allow standard-notification fallback'),
+                    subtitle: const Text(
+                      'If alarm-style delivery is unavailable or not allowed, '
+                      'MyTasks may send a regular notification instead. It '
+                      'can arrive later and will not keep ringing. Off by default.',
+                    ),
+                    value: saved.allowStandardNotificationFallback,
+                    onChanged: !saved.enabled || _savingPreferences
+                        ? null
+                        : (enabled) => _savePreferences(
+                            context,
+                            _copyPreferences(
+                              saved,
+                              allowStandardNotificationFallback: enabled,
+                            ),
+                          ),
+                  ),
                 ],
               ),
             ),
@@ -221,6 +244,63 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                       'This platform could not report notification status.',
                   },
                 ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Exact alarm access (Android)',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  alarmPermission.when(
+                    loading: () => const _PermissionStatusMessage(
+                      icon: Icons.hourglass_empty,
+                      message: 'Checking whether exact alarms are allowed…',
+                    ),
+                    error: (error, _) => const _PermissionStatusMessage(
+                      icon: Icons.help_outline,
+                      message: 'Could not read exact-alarm access status.',
+                    ),
+                    data: (status) => _PermissionStatusMessage(
+                      icon: switch (status) {
+                        AlarmPermissionStatus.allowed =>
+                          Icons.check_circle_outline,
+                        AlarmPermissionStatus.notAllowed =>
+                          Icons.alarm_off_outlined,
+                        AlarmPermissionStatus.unsupported =>
+                          Icons.phone_android_outlined,
+                      },
+                      message: switch (status) {
+                        AlarmPermissionStatus.allowed =>
+                          'Android allows exact alarm scheduling. Notification '
+                              'permission is also needed to show an alert.',
+                        AlarmPermissionStatus.notAllowed =>
+                          'Exact-time alarms are not allowed. You can grant '
+                              'access in Android settings; reminders remain '
+                              'unavailable as alarms until then.',
+                        AlarmPermissionStatus.unsupported =>
+                          'Exact alarm access is currently supported only on '
+                              'Android. iOS alarm support is a separate '
+                              'implementation.',
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: alarmPermission.isLoading
+                        ? null
+                        : () => _explainAndRequestAlarmAccess(context),
+                    icon: const Icon(Icons.alarm_add_outlined),
+                    label: const Text('Allow exact alarms'),
+                  ),
+                ],
               ),
             ),
           ),
@@ -273,7 +353,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
         _ReminderSlot.endOfDay => 'Choose end-of-day reminder time (IST)',
       },
     );
-    if (selected == null || !mounted) return;
+    if (selected == null || !context.mounted) return;
 
     final selectedTime = ReminderTime(selected.hour * 60 + selected.minute);
     final updated = switch (slot) {
@@ -297,6 +377,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
     ReminderPreferences current, {
     bool? enabled,
     bool? quietHoursEnabled,
+    bool? allowStandardNotificationFallback,
     ReminderTime? morningTime,
     ReminderTime? middayTime,
     ReminderTime? endOfDayTime,
@@ -314,6 +395,9 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
     quietHoursEnd: quietHoursEnabled == false
         ? null
         : quietHoursEnd ?? current.quietHoursEnd,
+    allowStandardNotificationFallback:
+        allowStandardNotificationFallback ??
+        current.allowStandardNotificationFallback,
     soundEnabled: current.soundEnabled,
     vibrationEnabled: current.vibrationEnabled,
     updatedAtUtc: current.updatedAtUtc,
@@ -337,7 +421,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
           ? 'Choose quiet-hours start (IST)'
           : 'Choose quiet-hours end (IST)',
     );
-    if (selected == null || !mounted) return;
+    if (selected == null || !context.mounted) return;
 
     final selectedTime = ReminderTime(selected.hour * 60 + selected.minute);
     final updated = _copyPreferences(
@@ -430,6 +514,43 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open notification settings.')),
+      );
+    }
+  }
+
+  Future<void> _explainAndRequestAlarmAccess(BuildContext context) async {
+    final shouldContinue = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Allow exact-time alarms?'),
+        content: const Text(
+          'MyTasks needs Android exact-alarm access to trigger an alarm at '
+          'your chosen time, including while the phone is idle. Android will '
+          'open a system settings page where you can allow or decline access. '
+          'This permission alone does not enable notification display or '
+          'guarantee delivery on every device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Continue to settings'),
+          ),
+        ],
+      ),
+    );
+    if (shouldContinue != true || !context.mounted) return;
+
+    try {
+      await ref.read(alarmPermissionGatewayProvider).requestAccess();
+      ref.invalidate(alarmPermissionStatusProvider);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open exact-alarm settings.')),
       );
     }
   }

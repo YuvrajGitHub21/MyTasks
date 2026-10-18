@@ -2,9 +2,9 @@
 
 **Project:** Personal and public task planning mobile application  
 **Status:** Proposed delivery sequence based on the approved requirements and design  
-**Version:** 0.3  
-**Date:** 16 October 2026  
-**Sources:** [FRS.md](FRS.md) v0.5, [HLD.md](HLD.md) v0.4, [LLD.md](LLD.md) v0.4
+**Version:** 0.4  
+**Date:** 18 October 2026  
+**Sources:** [FRS.md](FRS.md) v0.7, [HLD.md](HLD.md) v0.5, [LLD.md](LLD.md) v0.6
 
 ## 1. Purpose
 
@@ -29,7 +29,7 @@ The first usable release includes:
 - Required topic, start date, planned end date, effort estimate, optional subtopic/description, and optional maximum end date.
 - Today/overdue classification, deterministic effort-based green shades, and overdue styling with accessible text/icon cues.
 - Partial progress logs, progress history, and correction/deletion of logs.
-- India Standard Time rules, configurable reminders, guest local reminders, signed-in push reminders, and privacy-safe notification previews.
+- India Standard Time rules, configurable local alarm-style prompts for actionable reminders, signed-in push summaries, and privacy-safe previews.
 - Offline access and edits for signed-in users, durable sync, guest-to-account transfer, and user-mediated same-field conflict resolution.
 - Account deletion with the documented retention behavior, basic operational monitoring, and release support information.
 
@@ -85,21 +85,22 @@ Study timer, calendar view, data export, collaboration, recurring tasks, and adv
 
 **Exit criteria:** Guest can create and manage tasks offline; list membership matches the agreed date rules; invalid values are rejected consistently; progress/completion history is preserved as specified; app relaunch keeps data; profiles cannot see one another's local data; screens meet the agreed accessibility review.
 
-### M3 — Reminders and platform behavior
+### M3 — Reminders, alarms, and platform behavior
 
-**Status: Plan prepared; implementation not started.** See [detailed M3 implementation plan](M3-Implementation-Plan.md).
+**Status: Local-notification prototype implemented; alarm-style behavior is the current approved change and implementation is pending.** See [detailed M3 implementation plan](M3-Implementation-Plan.md).
 
-**Goal:** Deliver local guest reminders and validate notification expectations on Android and iOS.
+**Goal:** Deliver local, OS-managed alarm-style prompts for actionable reminders and validate behavior on Android and iOS. Standard notifications are an explicit opt-in fallback where alarms are unavailable.
 
 **Work:**
 
-- Add notification permission onboarding, privacy-safe task summary, deep links to today's list, reminder preferences, and quiet hours.
-- Schedule guest reminders for no-task times (09:00 and 12:00 IST) and the end-of-day logging check (default 22:00 IST).
+- Keep the 09:00 daily task summary informational and dismissible; schedule no-task alarms (09:00 and 12:00 IST) and an end-of-day progress alarm (default 22:00 IST).
+- Add contextual Android exact-alarm authorization and iOS AlarmKit authorization where supported; offer inexact/local-notification fallback only when the user explicitly chooses it.
+- Add Open, Snooze (10 minutes), and Stop/Dismiss actions; use a full-screen presentation only where platform and store policy allow it.
 - Recompute local reminders after task/progress/preference changes, app start, day rollover, and device restart where supported.
 - Prototype Android ongoing-notification behavior only if a valid foreground use case exists; retain the documented platform limitation.
-- Test permission denied, notification disabled, reboot, timezone configuration, duplicate prevention, and task changes near dispatch time.
+- Test authorization denied, channel disabled, normal process close vs Xiaomi RAM cleanup vs force-stop, reboot, time-zone configuration, duplicate prevention, action routing, and task changes near dispatch time.
 
-**Exit criteria:** Guest reminder predicates match the FRS; duplicate reminders are prevented; notifications reveal no task names by default; app behavior remains usable when permission is denied; Android/iOS behavior and limitations are documented from device validation.
+**Exit criteria:** Reminder predicates match the FRS; duplicate alarms are prevented; no task names appear on the lock screen; Open/Snooze/Stop behavior works; unsupported/denied alarm authorization degrades clearly; Android/iOS behavior and limitations are documented from device validation.
 
 ### M4 — Java backend and signed-in account
 

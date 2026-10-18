@@ -1,9 +1,9 @@
 # Functional Requirements Specification (FRS)
 
 **Project:** Personal and public task planning mobile application  
-**Status:** MVP baseline updated; calendar scope remains deferred  
-**Version:** 0.5  
-**Date:** 16 October 2026
+**Status:** MVP baseline updated; alarm-style reminder behavior added; calendar scope remains deferred  
+**Version:** 0.7  
+**Date:** 18 October 2026
 
 ## 1. Purpose
 
@@ -72,7 +72,7 @@ An individual who plans tasks for themselves, checks a daily list, and records c
 3. Current, scheduled-later, and completed task lists.
 4. Today's effort-based green visual indicator and overdue red indication.
 5. Full completion and partial progress logging.
-6. Daily notification summary and configurable reminder schedule, subject to operating-system capabilities and permission.
+6. A privacy-safe daily task summary plus configurable, alarm-style actionable reminders, subject to operating-system capabilities and user authorization.
 7. Basic settings for reminder times, time zone behavior, and notification preferences.
 8. Offline task access and edits, with synchronization for account users and user-mediated resolution when the same task field was changed on multiple offline devices.
 
@@ -137,16 +137,18 @@ Priority labels: **Must** = required for the first usable release; **Should** = 
 
 | ID | Priority | Requirement |
 |---|---|---|
-| NOTIF-001 | Must | With operating-system permission, the app can show a daily task summary for today's current tasks. |
-| NOTIF-002 | Must | Notification content is concise and privacy-aware; the user can open the relevant task or today's list from it. |
-| NOTIF-003 | Must | The user can enable/disable reminders and configure supported reminder times. The app explains when notifications are unavailable or permission is denied. |
-| NOTIF-004 | Must | When there are no active tasks today, the app reminds the user to assign today's work at 9:00 AM and 12:00 PM (noon), in India Standard Time. The user delegated the choice; noon follows their explicit “1200 in 24 hr clock” response. |
-| NOTIF-005 | Must | At a configurable end-of-day time, default 10:00 PM, the app prompts the user to log today's work if there is active incomplete work with no progress log dated today. One log for a task today is sufficient to suppress the reminder for that task. |
+| NOTIF-001 | Must | With user authorization, the app can show a privacy-safe daily task summary for today's current tasks. This informational summary may use the standard dismissible notification presentation. |
+| NOTIF-002 | Must | Actionable reminder content is concise and privacy-aware. An alarm action can open task creation or today's task list, as appropriate; it must not include task names on the lock screen by default. |
+| NOTIF-003 | Must | The user can enable/disable reminders and configure supported reminder times. Explain and request required notification/alarm authorization only in context; task functionality remains usable if authorization is declined. |
+| NOTIF-004 | Must | When there are no active tasks today, present an alarm-style prompt to assign today's work at 9:00 AM and 12:00 PM (noon), in India Standard Time. The user delegated the choice; noon follows their explicit “1200 in 24 hr clock” response. |
+| NOTIF-005 | Must | At a configurable end-of-day time, default 10:00 PM, present an alarm-style prompt to log today's work if active incomplete work has no progress log dated today. One log for a task today is sufficient to suppress the reminder for that task. |
 | NOTIF-006 | Must | Reminder scheduling uses the initial-release India Standard Time date/time rules and avoids duplicate reminders for the same user, device, reminder type, and date. Support for travel and other time zones is deferred. |
-| NOTIF-007 | Must | On Android, the app may offer an ongoing notification while an appropriate foreground service is actively running, subject to OS rules and user controls; it is not a permanent guarantee. On iOS, use supported notification/live activity behavior; the app cannot guarantee a permanently visible, non-dismissible task notification. |
-| NOTIF-008 | Must | If the user denies notification permission, core task functionality remains available and the app provides a route to notification settings. |
+| NOTIF-007 | Must | Actionable reminders use the platform's supported alarm-style presentation: sustained/repeating audible alert until Stop or Snooze, subject to platform limits, plus actions to open the relevant app screen, snooze, and stop/dismiss. A full-screen/lock-screen presentation is used only where the OS and distribution policy permit it. The app must not run a foreground service solely to keep its scheduler alive. |
+| NOTIF-008 | Must | If the user denies notification or alarm authorization, core task functionality remains available and the app provides a route to the relevant system settings. |
 | NOTIF-009 | Must | Lock-screen daily summary uses a privacy-safe count, e.g. “You have 3 tasks today,” without task names. |
-| NOTIF-010 | Must | Users can customize reminder times and notification preferences, including quiet hours and sound/vibration where supported. Reminder date/time behavior initially uses India Standard Time; broader travel/time-zone behavior is out of scope for now. |
+| NOTIF-010 | Must | Users can customize reminder times and quiet hours. Sound and vibration follow user-controlled OS alarm/channel settings. Reminder date/time behavior initially uses India Standard Time; broader travel/time-zone behavior is out of scope for now. |
+| NOTIF-011 | Must | The app requests any platform-specific alarm authorization with an explanation. If exact alarm or AlarmKit authorization is unavailable, it reports the limitation and offers a standard-notification fallback only as an explicit user choice; it must not silently replace an alarm with a notification or claim Clock-level delivery guarantees. |
+| NOTIF-012 | Must | Tapping “Open” on a no-task alarm opens task creation with today's date selected; tapping “Open” on an end-of-day alarm opens Today. Snoozing delays that alarm by 10 minutes; stopping/dismissing acknowledges the current occurrence without disabling future reminders. |
 
 ### 6.6 Future calendar and study timer foundations
 
@@ -243,7 +245,7 @@ This is a conceptual starting point. It does not prescribe database tables or a 
 ## 11. Dependencies and constraints
 
 - Mobile OS notification policies and user permission choices limit persistent notification behavior.
-- Reliable reminders use local scheduling for guests and backend push evaluation for signed-in accounts, subject to OS delivery and permissions.
+- Guest alarm prompts use local OS scheduling; signed-in alarm prompts use the device's latest synchronized local state, with backend push available for supplemental summaries. Delivery remains subject to OS authorization and restrictions.
 - Public availability implies release operations, privacy disclosures, support, and potentially account/data lifecycle requirements; the exact obligations depend on release markets and platform choices.
 - The FRS, HLD, LLD, and [Implementation Roadmap](Implementation-Roadmap.md) form the current MVP planning baseline; update them together when scope changes.
 
@@ -257,3 +259,4 @@ This is a conceptual starting point. It does not prescribe database tables or a 
 | 0.4 | 13 October 2026 | Set no-task reminders to 9 AM and noon, captured the end-of-day log suppression rule, and selected fixed effort-to-color thresholds. Calendar remains deferred. |
 | 0.5 | 16 October 2026 | Selected Android/iOS minimum versions, privacy-minimizing MVP defaults and retention windows; added iOS Sign in with Apple, in-app/web account deletion, and clarified task-history retention. |
 | 0.6 | 16 October 2026 | Aligned reminder scheduling with the selected IST-only MVP behavior; other time zones are deferred. |
+| 0.7 | 18 October 2026 | Changed actionable no-task and end-of-day reminders from ordinary notifications to authorized alarm-style alerts with open, snooze, and dismiss behavior; retained the daily summary as informational. |

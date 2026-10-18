@@ -1,31 +1,33 @@
-# M3 — Detailed Implementation Plan: Local Reminders
+# M3 — Detailed Implementation Plan: Local Reminders and Alarm Prompts
 
 **Project:** MyTasks mobile application  
-**Status:** Plan prepared; implementation not started  
-**Date:** 17 October 2026  
+**Status:** Existing local-notification implementation is a prototype; alarm-style actionable reminders are now the approved target and require a new implementation slice.  
+**Date:** 18 October 2026  
 **Owner:** Project owner and assistant, using batches of no more than five changed files and an approval checkpoint before each implementation batch.  
 **Prerequisite:** M2 Android guest experience completed.  
 **Baseline:** [FRS](FRS.md), [HLD](HLD.md), [LLD](LLD.md), [Implementation Roadmap](Implementation-Roadmap.md), [UI Flow and Wireframes](UI-Flow-and-Wireframe.md), [M2 plan](M2-Implementation-Plan.md), and [Working Agreement](Working-Agreement.md).
 
 ## 1. Goal
 
-Add configurable local reminders for the guest profile. Reminders must be derived from the encrypted local task and progress data, remain useful offline, avoid duplicates, protect task names on the lock screen, and keep the task app usable when notification permission is denied.
+Add configurable local reminders for the guest profile based on encrypted local task/progress data. Keep the 09:00 daily summary informational. Present actionable no-task and end-of-day logging prompts as OS-managed alarm-style alerts with Open, Snooze (10 minutes), and Stop/Dismiss actions. Protect task names, avoid duplicates, work offline, and keep core task use available when authorization is denied.
 
-M3 is a mobile-only milestone. It does not add accounts, push notification delivery, backend reminder workers, or an ongoing foreground service. Signed-in push reminders remain part of M6 after identity, device registration, and sync exist.
+M3 is a mobile-only, guest-mode milestone. It does not add accounts, synchronization, backend reminder workers, or a continuously running foreground service. The existing normal notification implementation is already present but does not meet this updated alarm requirement. M6 must schedule signed-in local alarms from the latest synchronized device copy; server push may remain a supplemental summary and is not the precise alarm mechanism.
 
 ## 2. Decisions for M3
 
 | Decision | M3 choice | Reason |
 |---|---|---|
-| Notification implementation | Use `flutter_local_notifications`; keep it behind an application-owned notification scheduling contract. | The package supports scheduled local notifications on Android and iOS, while the app keeps plugin details out of domain and presentation layers. |
+| Delivery boundary | Keep reminder rules and schedule identity behind application-owned contracts; implement platform-specific alarm adapters outside the domain. Use the existing notification plugin only for the informational summary and fallback unless a verified adapter supports the required alarm behavior. | Domain rules stay portable while Android exact alarms and iOS AlarmKit have different authorization and presentation models. |
 | Local scheduling time zone | Always schedule using the IANA zone `Asia/Kolkata`; device travel/time-zone changes do not change the reminder's intended IST wall-clock time. | The initial release explicitly uses IST and defers travel-aware scheduling. |
 | Time-zone conversion | Use `timezone` and construct dates with its `Asia/Kolkata` location. Initialize the bundled tz database once during app startup. | A scheduled wall-clock time must be converted using an explicit zone; the package defaults its local zone to UTC unless configured. |
 | Reminder times | No-task reminders: 09:00 and 12:00 IST. End-of-day log reminder: 22:00 IST. All are configurable in settings. | These are the approved requirements and defaults. |
 | Morning summary | Reuse the first configured no-task slot (default 09:00): show one count-only daily summary when active tasks exist; show the “assign today's work” prompt when there are none. Never send both in that slot. At the second configured no-task time (default 12:00), send only the no-task prompt if the day is still empty. | This satisfies both the daily summary and no-task reminder requirements without duplicate morning notifications. |
 | Reminder preference default | The guest reminder preference starts enabled, matching the approved wireframe; show a contextual explanation before the first OS permission request. If permission is denied, leave tasks usable and show the blocked delivery status in settings. | The user originally requested reminders; an in-app setting and OS permission still let them opt out. |
-| Sound/vibration default | Follow normal OS defaults; app preferences begin enabled where supported, but never override Android channel or iOS system controls. | The user can change either app preference or system-level notification behavior. |
-| Android scheduling precision | Use `AndroidScheduleMode.inexactAllowWhileIdle` by default; do not request exact-alarm special access in M3. | These are planning reminders, not an alarm-clock use case. Android exact alarms have extra access rules and are denied by default for many new Android 14 installs. The app will describe delivery as best effort. |
-| Reminder type and tone | Use one normal “Task reminders” notification channel at a calm default importance; let Android channel controls and iOS notification settings remain authoritative. | A task-planning prompt should not impersonate an urgent alarm. Do not request Do Not Disturb access. |
+| Android alarm precision | Use exact user-facing scheduling only after contextual explanation and user-granted `SCHEDULE_EXACT_ALARM` access. Do not select `USE_EXACT_ALARM` until public-store eligibility is reviewed. If access is denied, report alarms as unavailable and offer standard notifications only when the saved `allowStandardNotificationFallback` preference is on. It defaults off. | Android treats exact alarms as special access; the user can decline. This avoids silently substituting a notification for an alarm. |
+| iOS alarm capability | Use AlarmKit with separate authorization on iOS 26+; on iOS 15–25 or after denial, report alarms as unavailable and offer standard local notifications only as an explicit opt-in. | This preserves the project's iOS 15 minimum while using the native alarm UI where the OS supports it. |
+| Alarm actions | Provide Open, Snooze for 10 minutes, and Stop/Dismiss this occurrence. Alarm sound continues until the user responds, subject to platform limits. Open routes a no-task alarm to task creation and an end-of-day alarm to Today. | The user can take the intended action from the alert; stopping an occurrence does not disable future reminders. |
+| Alarm presentation limits | Full-screen/lock-screen presentation is conditional on OS and public-store policy. Never request Do Not Disturb bypass or claim guaranteed delivery. | Alarm and full-screen permissions are intentionally restricted; the standard alarm notification must remain actionable without full-screen access. |
+| Sound/vibration | Let OS alarm/channel settings control sound and vibration; quiet hours remain an app-level scheduling rule. | Android channel controls are user-owned and immutable after creation; AlarmKit has its own system authorization/presentation. |
 | Default lock-screen content | Always use a generic title/body and an optional task count; never include topic, subtopic, or description. | The FRS requires count-only privacy-safe lock-screen summaries. Notification taps open the relevant app view. |
 | Permission timing | Explain the value in the reminder setup flow, then request OS permission only when the user turns reminders on/continues setup. Never prompt on the first app launch. | This gives context and preserves a useful guest app if permission is declined. Android 13+ uses runtime notification permission; iOS authorization can be denied or changed in Settings. |
 | Sticky task-list notification | Do not build a permanent task-list notification or foreground service in M3. Use dismissible, scheduled reminders and the Today screen. | Android and iOS control notification visibility; the app cannot promise an unhideable notification. There is no valid long-running foreground operation for M3. |
@@ -34,9 +36,9 @@ M3 is a mobile-only milestone. It does not add accounts, push notification deliv
 
 ### Package versions at plan preparation
 
-The current stable package references on 17 October 2026 are `flutter_local_notifications 22.3.2` and `timezone 0.11.2`. Recheck compatibility and stable versions when the dependency batch starts, add compatible constraints, run `flutter pub get`, and commit the resulting `pubspec.lock` in the same approved batch. The local notification plugin version 10+ requires Android core-library desugaring, Android Gradle Plugin 8.11.1 or higher, and compile SDK 35 or higher; compare these requirements with the existing Flutter/Android configuration before editing it. Keep Java/Kotlin source compatibility at 17 unless the current Flutter toolchain requires a documented change; using JDK 25 to run Gradle does not mean app bytecode needs to target Java 25.
+The current notification prototype uses `flutter_local_notifications 22.3.2` and `timezone 0.11.2`. The alarm implementation needs a technical spike before choosing a Flutter AlarmKit bridge or writing a small native platform adapter. Check current stable package/API compatibility when that batch starts. Do not raise the iOS 15 deployment minimum globally: use AlarmKit on iOS 26+ and offer standard notifications on iOS 15–25 only if the owner explicitly opts in. Android exact alarm access must be requested contextually; full-screen behavior is conditional on Android and store eligibility.
 
-References: [flutter_local_notifications package and setup](https://pub.dev/packages/flutter_local_notifications/versions/22.3.2), [timezone package](https://pub.dev/packages/timezone), [Android notification permission](https://developer.android.com/develop/ui/compose/notifications/notification-permission), [Android exact alarm policy](https://developer.android.com/about/versions/14/changes/schedule-exact-alarms), [Android notification channels](https://developer.android.com/design/ui/mobile/guides/home-screen/notifications), and [Apple local notifications](https://developer.apple.com/documentation/usernotifications/scheduling-a-notification-locally-from-your-app).
+References: [Android alarm scheduling](https://developer.android.com/develop/background-work/services/alarms), [Android exact alarm access](https://developer.android.com/about/versions/14/changes/schedule-exact-alarms), [Android full-screen intent limits](https://developer.android.com/about/versions/14/behavior-changes-14), [Apple AlarmKit](https://developer.apple.com/documentation/AlarmKit), [Apple AlarmKit authorization and scheduling](https://developer.apple.com/documentation/AlarmKit/scheduling-an-alarm-with-alarmkit), and [Apple local notifications](https://developer.apple.com/documentation/usernotifications/scheduling-a-notification-locally-from-your-app).
 
 ## 3. Reminder rules
 
@@ -86,23 +88,25 @@ Application use cases: save preferences, evaluate rules, reconcile, handle tap
         ↓
 Domain entities/rules/contracts: preferences, eligibility, quiet hours, schedule identity
         ↑
-Drift preference/schedule-ledger adapter     Local-notification plugin adapter
+Drift preference/schedule-ledger adapter     Platform alarm/notification adapters
         ↑                                      ↑
         └────────── app composition root ─────┘
 ```
 
-The domain layer must not import Flutter widgets, Drift, `flutter_local_notifications`, or platform APIs. The application layer coordinates local task/progress repositories, the reminder-preference repository, and a notification-scheduler port. The outer adapter translates a desired schedule into plugin requests.
+The domain layer must not import Flutter widgets, Drift, notification packages, or platform APIs. The application layer coordinates local task/progress repositories, the reminder-preference repository, and an alarm-scheduler port. Outer adapters translate desired schedules into Android/iOS alarm and notification requests.
 
 ### Local schema
 
 M2 introduced Drift schema version 1. M3 adds a version-2 migration that preserves all existing encrypted task data and adds:
 
-- `ReminderPreferences`: one row per local profile, with enabled state; no-task times; end-of-day time; optional quiet-hours start/end; sound and vibration preferences where supported; and update time. Defaults match the product decisions above.
+- `ReminderPreferences`: one row per local profile, with enabled state; no-task times; end-of-day time; optional quiet-hours start/end; `allowStandardNotificationFallback` (default false); legacy sound/vibration columns; and update time. Sound/vibration columns remain for schema compatibility but do not drive OS channel/alarm settings or appear as app toggles; remove them only in a separately planned schema migration.
 - `ScheduledReminderRequests`: a stable schedule identity, platform integer ID, logical slot type, content kind, IST local date, configured slot, effective scheduled instant, and update time. Add uniqueness for identity and notification ID. The table is a reconciliation ledger, not a history of reminders that were shown.
 
 **Implementation checkpoint (18 October 2026):** `AppDatabase` now declares both tables at schema version 2. The version-1 upgrade creates only these new tables, so it does not rewrite existing profile, task, progress, or lifecycle rows. Drift code generation completed for `app_database.g.dart`. A disposable in-memory SQLite database shaped like schema version 1 was upgraded successfully: its sample profile, task, progress, and lifecycle rows remained present, both reminder tables were created, and `user_version` became 2. This check validates the Drift migration path and row preservation on SQLite; it does not exercise the encrypted database connection or the database on a physical phone.
 
-The domain record and Drift adapters now map reminder preferences and scheduled-request identities to the version-2 tables. The schedule repository preserves notification IDs for unchanged identities and retains obsolete ledger rows until the platform adapter confirms cancellation, so a retry can still discover IDs after an interrupted reconciliation. Riverpod now wires these repositories to the encrypted database and composes the clock, calculate, and save use cases. The reconcile use case remains unwired until the OS notification adapter exists. Migration verification remains pending.
+**Fallback preference persistence (18 October 2026):** The app now uses schema version 3. The version-2 upgrade adds `allow_standard_notification_fallback` to `reminder_preferences` with a database default of false, preserving existing rows and task data. The domain model, Drift repository, and `SaveReminderPreferences` use case carry this value through reads, writes, and unrelated setting changes. The settings screen exposes an explicit opt-in and explains that standard notifications can be late and do not ring continuously. Scheduling does not consume this preference yet; the upcoming Flutter/native adapter integration must honor it before fallback behavior is considered implemented. Dart analysis of the five persistence files reported no issues. No automated tests or encrypted on-device migration check were run for this change.
+
+The domain record and Drift adapters map reminder preferences and scheduled-request identities to the version-2 tables. The schedule repository preserves notification IDs for unchanged identities and retains obsolete ledger rows until the platform adapter confirms cancellation, so a retry can still discover IDs after an interrupted reconciliation. Riverpod wires these repositories to the encrypted database and composes the clock, calculate, save, and reconcile use cases. A disposable SQLite v1-to-v2 migration check passed as recorded above; verification against an encrypted on-device database remains pending.
 
 Test the migration from an existing version-1 database without resetting user data. Keep all queries profile-scoped. OS pending requests and this ledger must reconcile safely after a crash between a database write and a platform plugin call.
 
@@ -128,23 +132,23 @@ Add Drift tables and the version-1-to-version-2 migration, preference/schedule r
 
 **Learning:** A migration evolves a database without discarding existing records; a repository lets the scheduler save intent without knowing SQL.
 
-### M3-C — Notification package and platform foundation
+### M3-C — Existing notification foundation (implemented; alarm extension pending)
 
-**Goal:** Initialize the plugin and verify one generic test notification on Android before implementing business scheduling.
+**Goal:** Initialize ordinary notification support for daily summaries and fallback reminders; this foundation is implemented. Alarm-specific platform adapters are a new pending slice.
 
-The dependency/platform foundation batch has been implemented with `flutter_local_notifications: ^22.3.2` and `timezone: ^0.11.2` (resolved exact versions are in `frontend/pubspec.lock`). The Android app now enables core-library desugaring and declares the plugin's scheduled-notification receiver, plus boot/package-replacement recovery receiver and `RECEIVE_BOOT_COMPLETED`. The app's Flutter-provided compile SDK and current AGP already meet the plugin's stated minimums, so neither was changed. Exact-alarm, full-screen-intent, Do Not Disturb, and foreground-service permissions were not added.
+The prototype foundation uses `flutter_local_notifications: ^22.3.2` and `timezone: ^0.11.2` (resolved exact versions are in `frontend/pubspec.lock`). Android declares the plugin's scheduled-notification receiver and boot/package-replacement recovery receiver. It currently does not declare exact-alarm or full-screen-intent access and therefore does not yet meet the new alarm requirement. Do Not Disturb and foreground-service access remain out of scope.
 
-The Dart startup initializer is now in `frontend/lib/data/notifications/local_notification_initializer.dart` and is awaited before the Flutter UI starts. It initializes the bundled IANA time-zone data, sets the default scheduling zone to `Asia/Kolkata`, and initializes Android/iOS plugin settings with iOS permission prompts disabled. It also creates Android's `Task reminders` channel. If setup fails, startup logs the error in debug output and still opens the task app. No notification is scheduled or displayed yet.
+The Dart startup initializer is in `frontend/lib/data/notifications/local_notification_initializer.dart` and is awaited before the Flutter UI starts. It initializes the bundled IANA time-zone data, sets the default scheduling zone to `Asia/Kolkata`, and initializes Android/iOS plugin settings with iOS permission prompts disabled. It also creates Android's standard `Task reminders` channel. If setup fails, startup logs the error in debug output and still opens the task app. The existing reconciliation flow schedules ordinary notifications; separate alarm channels/adapters are not implemented yet.
 
-The Android initializer now creates the normal `Task reminders` channel with default importance. On iOS, `AppDelegate.swift` assigns the app delegate to `UNUserNotificationCenter` so foreground presentation and notification responses can be integrated with the plugin. These steps do not request permission or schedule reminders.
+The Android initializer creates the normal `Task reminders` channel with default importance. On iOS, `AppDelegate.swift` assigns the app delegate to `UNUserNotificationCenter` so foreground presentation and notification responses can be integrated with the plugin. These steps initialize presentation support; reconciliation schedules ordinary reminders when preferences and local task state call for them.
 
-Still remaining in M3-C: wire a notification-tap callback to app navigation and show a generic test notification through an explicit user action. Android delivery and iOS source/build/runtime behavior still need platform verification; iOS compilation requires macOS/Xcode.
+The initializer, notification tap callback, Android exact-alarm scheduler, and native ringing engine are implemented. Remaining alarm work includes making snoozed occurrences independent in the encrypted ledger, completing iOS AlarmKit authorization/scheduling, and validating Android channel/settings behavior on devices. The exact-alarm engine currently uses a separate alarm notification channel from the informational summary channel.
 
 **Startup verification (18 October 2026):** `flutter build apk --debug --no-pub` succeeded after startup initialization was added and produced `frontend/build/app/outputs/flutter-apk/app-debug.apk`. The cached Android build completed in about 40 seconds. This verifies compilation, not runtime notification delivery; no automated tests or physical-device checks were run for this batch.
 
 **Channel and delegate verification (18 October 2026):** The Android debug APK rebuilt successfully after channel creation was added. This confirms Android compilation of the channel setup. The iOS delegate edit could not be compiled in the Windows environment; verify it on macOS/Xcode before claiming iOS support.
 
-The `FlutterLocalNotificationScheduler` adapter now maps reminder requests to generic, privacy-safe notification text, converts each UTC instant to an `Asia/Kolkata` zoned time, schedules with Android's inexact-while-idle mode, and uses stable IDs from the encrypted Drift ledger. It cancels obsolete OS notifications before removing their ledger rows, so failed cancellation can be retried. Riverpod exposes the scheduler and `ReconcileReminders` use case together. The adapter currently follows system sound/vibration settings; saved sound/vibration preferences are not applied yet.
+The `FlutterLocalNotificationScheduler` adapter maps reminder requests to generic, privacy-safe notification text, converts each UTC instant to an `Asia/Kolkata` zoned time, schedules with Android's inexact-while-idle mode, and uses stable IDs from the encrypted Drift ledger. It cancels obsolete OS notifications before removing their ledger rows, so failed cancellation can be retried. Riverpod exposes the scheduler and `ReconcileReminders` use case together. This is the existing notification prototype; it does not yet provide exact alarm scheduling, ringing controls, or snooze actions.
 
 Task create, edit, and delete, progress create/edit/delete, and task complete/reopen use cases now accept an application-owned change callback supplied by the Riverpod composition root. After a successful database write, it recalculates and replaces that profile's reminder schedule. Validation failures and no-op updates/deletes/transitions do not reconcile. Reminder/plugin failures are caught and logged so a committed user action is still reported as successful; the app does not yet have a centralized logging service. App startup/resume reconciliation and reminder-settings triggers remain to be wired.
 
@@ -164,11 +168,11 @@ Task create, edit, and delete, progress create/edit/delete, and task complete/re
 
 **Review gate:** Android debug build on the available Android 12 phone. Confirm no regression from the plugin's desugaring requirement. iOS source configuration can be prepared on Windows, but iOS build/runtime verification needs macOS/Xcode.
 
-### M3-D — Reconciliation and scheduling adapter
+### M3-D — Reconciliation and scheduling adapter (notification prototype implemented; alarm adapter pending)
 
 **Goal:** Turn the domain's desired reminders into idempotent OS requests.
 
-Implement the plugin adapter with stable request IDs, generic count-only content, `Asia/Kolkata` one-shot scheduling, cancellation/replacement, permission/channel-status checks, and error mapping. Use `inexactAllowWhileIdle` on Android. Schedule only remaining slots for today plus tomorrow. Reconcile on all task/progress/lifecycle/preference mutations, app startup/resume, and supported Android reboot/package update. Keep OS work best effort and do not expose task text in logs or payloads.
+The current plugin adapter already reconciles stable IDs, privacy-safe payloads, `Asia/Kolkata` wall-clock times, and cancellation/replacement, but uses `inexactAllowWhileIdle`. Replace actionable reminder dispatch with the alarm adapter selected by the technical spike. Keep the 09:00 informational summary on the standard notification path. Preserve desired-state reconciliation and the short schedule horizon. Reconcile on task/progress/lifecycle/preference mutations, app startup/resume, and supported reboot/package-update events. Keep task text out of logs and payloads.
 
 **Learning:** Reconciliation compares desired state with external state and applies only the changes needed. Stable IDs make retries safe when an operation is interrupted.
 
@@ -176,7 +180,7 @@ Implement the plugin adapter with stable request IDs, generic count-only content
 
 **Goal:** Let the owner understand and control reminders without blocking task use.
 
-Add a reminder settings screen reachable from app settings; provide enable/disable, two no-task times, end-of-day time, optional quiet hours, sound/vibration controls where supported, current system permission/channel status, and a link to system settings after denial. Show an explanation before the OS permission request. Never repeatedly prompt after denial. Store preferences locally and reconcile after every change.
+The reminder settings screen, schedule times, quiet hours, notification permission status, reminder enable/disable, Android exact-alarm access flow, and explicit standard-notification fallback choice are implemented. The fallback is stored per profile and defaults Off. iOS AlarmKit authorization remains pending. Sound/vibration remain under OS channel/alarm controls rather than redundant in-app switches. Store authorization state as platform state, not as the user's app preference, and reconcile after any authorization change.
 
 **Permission gateway implemented (18 October 2026):** `NotificationPermissionGateway` is the application-owned contract for reading permission status, requesting permission, and opening app notification settings. `FlutterNotificationPermissionGateway` adapts the installed `flutter_local_notifications 22.3.2` APIs for Android and iOS, and `notificationPermissionGatewayProvider` exposes it through Riverpod. This layer does not display an explanation or request permission automatically; no app startup behavior changed. The cross-platform state is intentionally `enabled`, `disabled`, or `unavailable`: the plugin does not consistently tell the app whether disabled permission was never requested or explicitly denied. The settings screen must explain this limitation and only call `requestPermission()` after a user action.
 
@@ -192,7 +196,13 @@ Add a reminder settings screen reachable from app settings; provide enable/disab
 
 **Goal:** Make a delivered reminder lead to the right useful screen and recover schedules after routine app/device changes.
 
-**Notification tap routing implemented (18 October 2026):** Scheduled payloads now contain versioned JSON routing metadata (`contentKind` and the non-sensitive reminder identity); task names and other task text are never included. Warm-app responses are emitted through the notification initializer's tap stream. Cold-start responses are retained until the root Navigator is available. No-task prompts open the task form, whose start date defaults to today in IST; daily summaries and progress prompts open the Today task list. Invalid/old payloads are ignored safely. Verify foreground, background, and terminated-app taps on a device; iOS runtime verification requires macOS/Xcode.
+**Notification tap routing implemented (18 October 2026):** Scheduled payloads contain versioned, non-sensitive routing metadata. No-task prompts open task creation; summaries and progress prompts open Today. Android alarm Open taps now use the same routes for warm and cold app starts. Snooze must persist a distinct one-off occurrence without duplicating the original daily slot; Stop/Dismiss acknowledges only the current occurrence. Verify foreground, background, and terminated-app taps on a device; iOS runtime verification requires macOS/Xcode.
+
+**Android alarm engine connected (18 October 2026):** The app-owned Dart scheduler now sends actionable reminders to the native `AlarmManager.setAlarmClock` bridge only when Android exact-alarm access is granted. Daily summaries stay ordinary notifications. If exact alarm access is unavailable, task prompts use ordinary notifications only when the saved `allowStandardNotificationFallback` preference is enabled; otherwise those prompts remain unscheduled. If access is revoked between the status check and scheduling, the same explicit fallback rule is applied. Alarm taps are routed through the existing versioned payload router for both warm and cold app starts. Android stores pending native alarms for reboot restoration and rings through a foreground media-playback service with Stop/Snooze controls. `flutter analyze` completed with no issues and `flutter build apk --debug --no-pub` succeeded for this integration. Device delivery verification is pending because no Android device was attached during the check.
+
+**Android snooze identity correction (18 October 2026):** Tapping Snooze now allocates a distinct native alarm ID instead of replacing the original occurrence. Android records the parent alarm ID with the snoozed alarm, so cancelling/reconciling the parent also cancels its pending snoozes. The native schedule remains durable if Flutter is closed. This is the first snooze correction stage: importing the snoozed one-off occurrence into the encrypted Drift ledger is still required before the reminder ledger represents it fully. iOS AlarmKit remains pending.
+
+**Snoozed-occurrence schema (18 October 2026):** Drift schema version 4 adds `snoozed_reminder_records`, separate from the daily `scheduled_reminder_requests`. Each row identifies the profile, parent reminder identity, one-off content kind, platform alarm ID, and UTC fire time. Deleting a parent reminder cascades its snooze row; the repository must also verify that the referenced parent belongs to the same profile. The version 4 migration only creates the new table, so it does not rebuild or rewrite existing reminder rows. The domain entity and repository contract are defined; the Drift adapter and Android-to-Dart import/acknowledgement flow are still pending, so this schema change alone does not yet persist runtime snooze taps. Drift code generation and the Android debug build succeeded. Static analysis found no issue in the new snooze files, but returned a pre-existing warning in `notification_tap_router.dart` plus informational lints elsewhere.
 
 No-task reminder taps open the new-task form with today's IST date as the start-date default. End-of-day taps open Today so the user can choose which task to log. Handle cold-start and warm-app taps. Restore the rolling schedule after launch/resume, device reboot, and package replacement on Android as supported by the plugin. Cancel past-date requests and avoid replaying missed prompts on the following day.
 
@@ -202,9 +212,9 @@ No-task reminder taps open the new-task form with today's IST date as the start-
 
 **Goal:** Demonstrate rule correctness and document platform limits before calling M3 complete.
 
-Use an injectable clock or approved test harness to check each predicate, quiet-hours edge, date rollover, migration, duplicate reconciliation, cancellation, and tap route. Then manually verify permission allow/deny, app channel disabled, schedule changes, reboot, app update, foreground/background/terminated tap handling, task/progress mutations near dispatch, and privacy-safe lock-screen content.
+Use an injectable clock or approved test harness to check each predicate, quiet-hours edge, date rollover, migration, duplicate reconciliation, cancellation, alarm snooze/stop/open behavior, and tap route. Then manually verify notification and alarm authorization allow/deny, channel disabled, schedule changes, reboot, app update, foreground/background/terminated behavior, task/progress mutations near dispatch, sound, and privacy-safe lock-screen content.
 
-Run device checks on the owner's Android 12 Xiaomi phone and, if available, a separate Android 13+ device/emulator. Xiaomi/MIUI background restrictions can delay or stop alarms; document the relevant battery/auto-start guidance without asking for broad battery exemptions. Record iOS source/build/runtime verification as pending until a Mac/Xcode device or simulator is available. Automated tests are not added or run unless the owner explicitly asks for that test batch.
+Run device checks on the owner's Android 12 Xiaomi phone and, if available, a separate Android 13+ device/emulator. **Observed 18 October 2026:** an alarm set for 12:35 arrived while MyTasks was open but did not arrive after using Xiaomi's clear-RAM action. ADB later showed future `ScheduledNotificationReceiver` alarms registered with Android, but that does not establish why the cleared-RAM case failed. Reproduce separately with (1) Home/lock, (2) swipe from Recents, (3) Xiaomi clear-RAM, and (4) Android Force stop; record scheduled OS alarms before/after each. Xiaomi/MIUI background restrictions can delay or stop background delivery; document app-specific auto-start/battery settings based on this evidence, without requesting broad battery exemptions. Android 12 does not exercise Android 13+'s runtime notification permission or Android 14+'s exact-alarm grant defaults. Record iOS source/build/runtime verification as pending until a Mac/Xcode device or simulator is available. Automated tests are not added or run unless the owner explicitly asks for that test batch.
 
 ## 6. Suggested change batches
 
@@ -215,7 +225,10 @@ These are expected groups, not blanket approval to edit them. Each will be prese
 3. **M3-C plugin setup:** `pubspec.yaml`, `pubspec.lock`, Android Gradle/manifest files, and plan update; split Android and iOS setup into separate batches when needed.
 4. **M3-D scheduler adapter:** plugin service, schedule mapping, adapter provider, reconciliation use case wiring, and plan update; keep each batch at five files or fewer.
 5. **M3-E/F UI and routes:** settings/permission screens, app navigation, notification tap handling, and schedule triggers; split into independently reviewable batches.
-6. **M3-G verification:** approved test batch if requested, Android device results, documented iOS limitation, and exit review.
+6. **M3-G alarm adapter:** technical spike and Android exact-alarm bridge; keep the adapter behind the scheduler contract.
+7. **M3-H iOS alarm adapter:** AlarmKit authorization and scheduling on iOS 26+; offer the standard-notification fallback on iOS 15–25 only by explicit user choice.
+8. **M3-I actions/settings:** snooze/stop/open behavior, authorization status, and separate OS-controlled sound channels; split into batches of five files or fewer.
+9. **M3-J verification:** approved automated-test batch, Android device results, documented iOS limitation, and exit review.
 
 ## 7. Verification matrix
 
@@ -226,21 +239,21 @@ These are expected groups, not blanket approval to edit them. Each will be prese
 | Lifecycle | Complete, reopen, delete before reminder | Reconcile removes or restores eligibility without deleting retained history except when the task is deleted. |
 | Quiet hours | Off; inside window; window crossing midnight; quiet end same day/next day | Defer only to a permitted same-day time; otherwise suppress; no duplicate slot. |
 | Idempotency | Reconcile repeatedly; task mutation during schedule; app restart | Stable request IDs replace/cancel prior requests; one pending request per unique identity. |
-| Privacy/tap | Lock screen, notification shade, foreground, cold start, warm start | No task names appear; tap opens the expected Today/create view. |
+| Privacy/actions | Lock screen, notification shade, foreground, cold start, warm start, Open/Snooze/Stop | No task names appear; Open routes correctly, Snooze creates one 10-minute occurrence, Stop only acknowledges the current occurrence. |
 | Permission | Allow, deny, later revoke, Android channel disabled, iOS setting changed | Task CRUD remains available; app reports actual delivery status and gives a settings route. |
-| Platform lifecycle | Android reboot/update, idle mode, Xiaomi battery restriction, app force-stop; iOS background delivery | Reconcile when supported; never claim exact or guaranteed delivery; document observed OS behavior. |
+| Platform lifecycle | Android exact-alarm allow/deny, reboot/update, idle mode, Recents swipe, Xiaomi RAM cleanup, force-stop; iOS AlarmKit allow/deny and fallback | Exact Android alarms run only with access; fallback is clearly identified; document OEM behavior and never claim guaranteed delivery. |
 | Migration | Upgrade existing encrypted schema v1 to v2 with user data | Existing guest records remain readable and reminder defaults are created without replacing the database key. |
 
 ## 8. M3 exit criteria
 
 - Guest reminders work without network access and use the correct IST date and times.
-- No-task prompts are sent only when there is no active open task for today.
-- The 22:00 prompt appears only if one or more active tasks lack a same-day progress log; logs are evaluated per task.
+- No-task alarm prompts occur only when there is no active open task for today; 09:00 summaries remain informational.
+- The 22:00 alarm prompt appears only if one or more active tasks lack a same-day progress log; logs are evaluated per task.
 - Preferences persist, quiet hours follow the documented same-day defer/suppress rule, and repeated reconciliation creates no duplicates.
 - Schedules reconcile after relevant task/progress/lifecycle/preference changes, app restart/resume, and supported Android reboot/app-update events.
-- Notification permission denial or OS-level channel/settings disablement never blocks core task functionality.
-- Lock-screen content contains no task names; notification taps open the expected app destination.
-- The app does not claim an uncloseable or exact-time notification. Android uses inexact scheduling by default; OEM and iOS delivery limits are documented.
+- Notification/alarm authorization denial or OS-level channel/settings disablement never blocks core task functionality; standard-notification fallback is offered only as an explicit user choice.
+- Lock-screen content contains no task names; Open/Snooze/Stop alarm actions work and route as specified.
+- Android exact scheduling and iOS AlarmKit are used only with required authorization; full-screen presentation is used only when permitted. OEM, force-stop, and fallback limits are documented.
 - Android analysis/build and supported-device validation are recorded. iOS implementation/build/runtime status is explicit and requires Mac/Xcode validation before an iOS release claim.
 - No Java backend, push, account, sync, study timer, or calendar work is pulled into M3.
 
@@ -276,4 +289,4 @@ $env:JAVA_HOME = 'C:\Users\yuvra\develop\MyTasksToolchains\jdk-25.0.4.1+1'
 | Time-zone-aware date | A date/time interpreted through an IANA zone such as `Asia/Kolkata`, rather than the computer's default zone. |
 | Reconciliation | Recomputing what should be scheduled and making the OS requests match that desired state. |
 | Idempotent request | A schedule operation that can run again safely without creating another copy. |
-| Foreground service | A long-running Android operation with an ongoing notification; it is not justified by this reminder feature. |
+| Foreground service | A long-running Android operation with an ongoing notification. Do not keep one running just to maintain the alarm schedule; a short-lived, user-visible playback component may be needed only while an alarm is actively ringing. |

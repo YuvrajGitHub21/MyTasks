@@ -151,6 +151,8 @@ class ReminderPreferences extends Table {
   IntColumn get endOfDayTimeMinutes => integer()();
   IntColumn get quietHoursStartMinutes => integer().nullable()();
   IntColumn get quietHoursEndMinutes => integer().nullable()();
+  BoolColumn get allowStandardNotificationFallback =>
+      boolean().withDefault(const Constant(false))();
   BoolColumn get soundEnabled => boolean().withDefault(const Constant(true))();
   BoolColumn get vibrationEnabled =>
       boolean().withDefault(const Constant(true))();
@@ -209,6 +211,44 @@ class ScheduledReminderRequests extends Table {
   ];
 }
 
+@DataClassName('SnoozedReminderRecord')
+class SnoozedReminderRecords extends Table {
+  @override
+  String get tableName => 'snoozed_reminder_records';
+
+  /// Stable local identity, separate from the daily reminder slot identity.
+  TextColumn get occurrenceId => text()();
+
+  /// Identifier accepted by the operating system's alarm API.
+  TextColumn get platformAlarmId => text()();
+  TextColumn get profileId =>
+      text().references(LocalProfiles, #id, onDelete: KeyAction.cascade)();
+
+  /// Deleting the parent schedule removes its snoozed occurrence in Drift.
+  TextColumn get parentIdentity => text().references(
+    ScheduledReminderRequests,
+    #identity,
+    onDelete: KeyAction.cascade,
+  )();
+  TextColumn get contentKind => text()();
+  DateTimeColumn get scheduledAtUtc => dateTime()();
+  DateTimeColumn get createdAtUtc => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {occurrenceId};
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {platformAlarmId},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    "CHECK (content_kind IN ('assignTask', 'logToday'))",
+    'CHECK (length(platform_alarm_id) BETWEEN 1 AND 100)',
+  ];
+}
+
 @DriftDatabase(
   tables: [
     LocalProfiles,
@@ -217,6 +257,7 @@ class ScheduledReminderRequests extends Table {
     LocalLifecycleEvents,
     ReminderPreferences,
     ScheduledReminderRequests,
+    SnoozedReminderRecords,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -230,7 +271,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -241,6 +282,15 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         await migrator.createTable(reminderPreferences);
         await migrator.createTable(scheduledReminderRequests);
+      }
+      if (from < 3) {
+        await migrator.addColumn(
+          reminderPreferences,
+          reminderPreferences.allowStandardNotificationFallback,
+        );
+      }
+      if (from < 4) {
+        await migrator.createTable(snoozedReminderRecords);
       }
     },
     beforeOpen: (_) async {

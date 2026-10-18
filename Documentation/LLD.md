@@ -1,10 +1,10 @@
 # Low-Level Design (LLD)
 
 **Project:** Personal and public task planning mobile application  
-**Document status:** Implementation baseline selected  
-**Version:** 0.5
-**Date:** 16 October 2026  
-**Parent documents:** [FRS.md](FRS.md) v0.5 and reviewed [HLD.md](HLD.md) v0.4
+**Document status:** Implementation baseline updated for alarm-style reminders  
+**Version:** 0.6
+**Date:** 18 October 2026  
+**Parent documents:** [FRS.md](FRS.md) v0.7 and reviewed [HLD.md](HLD.md) v0.5
 
 ## 1. Purpose and design boundary
 
@@ -639,6 +639,15 @@ The 10 PM notification is sent once per user/date/device when at least one activ
 
 Quiet-hour rule: defer a reminder to the next permitted time on the same local date. If quiet hours end on the following date, suppress that reminder. Configure this in preferences logic, not in task domain rules.
 
+### 8.3 Alarm delivery adapter
+
+- The encrypted local reminder ledger remains the source of desired schedules and stable IDs. The OS owns the timer and invokes the registered receiver/alarm presentation after the Flutter process exits; no resident background service is required. If Android needs a service to sustain audible playback, it may run only for the active ringing interval and must expose user controls.
+- Keep the 09:00 daily summary informational and dismissible. Deliver the no-task prompts and eligible 22:00 progress prompts as audible, sustained alarm alerts with **Open**, **Snooze 10 minutes**, and **Stop/Dismiss this occurrence** actions, subject to OS limits. Open routes to task creation or Today; snooze creates a new occurrence identity and does not disable later reminders.
+- Android: use exact scheduling only after the user grants the platform's “Alarms & reminders” special access. Prefer the user-granted `SCHEDULE_EXACT_ALARM` path; do not declare `USE_EXACT_ALARM` until public-store eligibility is reviewed. If access is denied, report alarms as unavailable; offer the existing inexact notification fallback only if the user explicitly opts in. Use separate Android channel IDs for ordinary summaries and alarm alerts because channel sound/importance settings are user-controlled and cannot be changed by the app after channel creation. Full-screen intent is conditional on platform and Play eligibility; the alarm notification must still expose Open/Snooze/Stop actions.
+- iOS: use AlarmKit with its explicit authorization on iOS 26+ when available. On the project's iOS 15–25 deployment range or if AlarmKit authorization is denied, report alarms as unavailable and offer local notifications only as an explicit opt-in fallback. Implement AlarmKit through an isolated native adapter; keep domain rules and schedule identity platform-neutral.
+- Signed-in alarms, planned for M6, are scheduled on-device from the latest synchronized local state. Server push is not the alarm clock: it may provide an ordinary supplemental summary, but it cannot be treated as exact alarm delivery.
+- User force-stop, disabled alarm/notification channel, revoked authorization, battery restrictions, reboot, and OEM-specific cleanup require explicit recovery/limitation handling. Do not claim delivery is guaranteed or bypass OS controls.
+
 ## 9. Authentication, device, and account lifecycle
 
 ### 9.1 Provider sign-in
@@ -673,8 +682,8 @@ Never merge identities based only on matching email addresses. Adding another pr
 
 - Store notification preference and scheduled request IDs locally for each profile/device.
 - Reconcile schedules after task create/update/delete, progress create/update/delete, completion/reopen, reminder preference changes, and day rollover.
-- On Android, use normal scheduled notifications for reminders. An ongoing task-list notification is a separate platform-specific feature and only while a valid foreground operation justifies it; do not make the core list depend on it.
-- On iOS, use standard local/push notifications and app badges where supported; do not promise a permanently visible notification.
+- Use OS-managed local alarm APIs for actionable reminders and standard local/push notification APIs for informational summaries or fallback. Do not keep a service running solely to fire an alarm.
+- Alarm screen presentation is controlled by Android/iOS authorization and OS policy. Tapping Open navigates into the task flow; swiping/dismissing the system surface acknowledges only that occurrence.
 - Store the local database in app-private storage encrypted with SQLite3MultipleCiphers using its default `sqleet` ChaCha20-Poly1305 cipher, selected with `PRAGMA cipher = 'chacha20'`. Generate a cryptographically random database key and keep it in platform secure storage, separate from the database. Verify that the cipher build is active before opening user data. Exclude database/key material from OS cloud backup; signed-in data can be resynced and guest data remains intentionally device-local. Protect access and refresh tokens in platform secure storage. SQLite3MultipleCiphers is MIT-licensed and its notice must be included in app license notices.
 - On sign-out, retain or clear account cache according to a user-visible policy; never surface it in guest mode. Recommended default: retain encrypted local cache for re-login on the same device, but lock access behind account identity and clear on account deletion.
 
@@ -748,3 +757,4 @@ At scaffold, select latest stable compatible Flutter package releases (no prerel
 | 0.3 | 15 October 2026 | Switched backend implementation from NestJS/TypeScript to Java 25 LTS and Spring Boot at the user's direction. |
 | 0.4 | 16 October 2026 | Set OS/package policy and privacy/retention defaults; added Apple identity support, account deletion web path, and store submission decisions. |
 | 0.5 | 16 October 2026 | Confirmed UI effort thresholds as selected design rules for implementation. |
+| 0.6 | 18 October 2026 | Specified exact Android alarms with user-granted access, iOS AlarmKit on iOS 26+, fallback behavior, and actionable snooze/open/stop controls. |

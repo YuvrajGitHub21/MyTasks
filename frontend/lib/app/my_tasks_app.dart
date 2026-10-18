@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/notifications/android_task_alarm_channel.dart';
 import '../data/notifications/local_notification_initializer.dart';
 import 'app_shell.dart';
 import 'notification_tap_router.dart';
@@ -16,6 +17,7 @@ class MyTasksApp extends StatefulWidget {
 
 class _MyTasksAppState extends State<MyTasksApp> {
   final _notificationTapRouter = NotificationTapRouter();
+  final _alarmChannel = AndroidTaskAlarmChannel();
   StreamSubscription<String>? _tapSubscription;
 
   static const _brandGreen = Color(0xFF2E7D32);
@@ -26,6 +28,8 @@ class _MyTasksAppState extends State<MyTasksApp> {
     _tapSubscription = LocalNotificationInitializer.tapPayloads.listen(
       _notificationTapRouter.handlePayload,
     );
+    _alarmChannel.setAlarmOpenedHandler(_notificationTapRouter.handlePayload);
+    unawaited(_takePendingAlarmPayload());
     final launchPayload = LocalNotificationInitializer.takeLaunchPayload();
     if (launchPayload != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -37,6 +41,16 @@ class _MyTasksAppState extends State<MyTasksApp> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _notificationTapRouter.onNavigatorReady();
       });
+    }
+  }
+
+  Future<void> _takePendingAlarmPayload() async {
+    try {
+      final payload = await _alarmChannel.takePendingAlarmPayload();
+      if (payload != null) _notificationTapRouter.handlePayload(payload);
+    } catch (_) {
+      // iOS has a separate AlarmKit adapter; Android-only channel absence must
+      // not prevent the task application from starting on other platforms.
     }
   }
 
