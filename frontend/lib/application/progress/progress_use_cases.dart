@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entities/progress_entry.dart';
 import '../../domain/repositories/progress_repository.dart';
 import '../../domain/rules/task_rules.dart';
+import '../../domain/services/diagnostic_logger.dart';
 
 /// Application action that validates and records one partial-progress event.
 final class RecordProgress {
@@ -11,6 +12,7 @@ final class RecordProgress {
     this._profileId, {
     DateTime Function()? clock,
     Future<void> Function()? onChanged,
+    this._logger = const NoopDiagnosticLogger(),
   }) : _clock = clock ?? DateTime.now,
        _onChanged = onChanged;
 
@@ -20,32 +22,39 @@ final class RecordProgress {
   final String _profileId;
   final DateTime Function() _clock;
   final Future<void> Function()? _onChanged;
+  final DiagnosticLogger _logger;
 
-  Future<ProgressEntry> call(RecordProgressInput input) async {
-    final now = _clock().toUtc();
-    final entry = ProgressEntry(
-      id: _uuid.v4(),
-      taskId: input.taskId,
-      profileId: _profileId,
-      method: input.method,
-      percentComplete: input.percentComplete,
-      completedUnits: input.completedUnits,
-      totalUnits: input.totalUnits,
-      note: input.note,
-      occurredAt: (input.occurredAt ?? now).toUtc(),
-      createdAt: now,
-      updatedAt: now,
-    );
-    final errors = TaskRules.validateProgress(entry);
-    if (input.taskId.trim().isEmpty) {
-      errors['taskId'] = 'Choose a task for this progress entry.';
-    }
-    if (errors.isNotEmpty) throw ProgressValidationException(errors);
+  Future<ProgressEntry> call(RecordProgressInput input) =>
+      runDiagnosticOperation(
+        logger: _logger,
+        feature: 'progress',
+        eventName: 'progress.create',
+        action: () async {
+          final now = _clock().toUtc();
+          final entry = ProgressEntry(
+            id: _uuid.v4(),
+            taskId: input.taskId,
+            profileId: _profileId,
+            method: input.method,
+            percentComplete: input.percentComplete,
+            completedUnits: input.completedUnits,
+            totalUnits: input.totalUnits,
+            note: input.note,
+            occurredAt: (input.occurredAt ?? now).toUtc(),
+            createdAt: now,
+            updatedAt: now,
+          );
+          final errors = TaskRules.validateProgress(entry);
+          if (input.taskId.trim().isEmpty) {
+            errors['taskId'] = 'Choose a task for this progress entry.';
+          }
+          if (errors.isNotEmpty) throw ProgressValidationException(errors);
 
-    await _progress.createEntry(entry);
-    await _onChanged?.call();
-    return entry;
-  }
+          await _progress.createEntry(entry);
+          await _onChanged?.call();
+          return entry;
+        },
+      );
 }
 
 /// Application query for a task's chronological partial-progress history.
@@ -60,31 +69,51 @@ final class WatchProgressHistory {
 
 /// Application action for correcting an existing progress entry.
 final class CorrectProgressEntry {
-  const CorrectProgressEntry(this._progress, {this._onChanged});
+  const CorrectProgressEntry(
+    this._progress, {
+    this._onChanged,
+    this._logger = const NoopDiagnosticLogger(),
+  });
 
   final ProgressRepository _progress;
   final Future<void> Function()? _onChanged;
+  final DiagnosticLogger _logger;
 
-  Future<bool> call(ProgressEntry entry) async {
-    final errors = TaskRules.validateProgress(entry);
-    if (errors.isNotEmpty) throw ProgressValidationException(errors);
-    final updated = await _progress.updateEntry(entry);
-    if (updated) await _onChanged?.call();
-    return updated;
-  }
+  Future<bool> call(ProgressEntry entry) => runDiagnosticOperation(
+    logger: _logger,
+    feature: 'progress',
+    eventName: 'progress.update',
+    action: () async {
+      final errors = TaskRules.validateProgress(entry);
+      if (errors.isNotEmpty) throw ProgressValidationException(errors);
+      final updated = await _progress.updateEntry(entry);
+      if (updated) await _onChanged?.call();
+      return updated;
+    },
+  );
 }
 
 final class DeleteProgressEntry {
-  const DeleteProgressEntry(this._progress, {this._onChanged});
+  const DeleteProgressEntry(
+    this._progress, {
+    this._onChanged,
+    this._logger = const NoopDiagnosticLogger(),
+  });
 
   final ProgressRepository _progress;
   final Future<void> Function()? _onChanged;
+  final DiagnosticLogger _logger;
 
-  Future<bool> call(String entryId) async {
-    final deleted = await _progress.deleteEntry(entryId);
-    if (deleted) await _onChanged?.call();
-    return deleted;
-  }
+  Future<bool> call(String entryId) => runDiagnosticOperation(
+    logger: _logger,
+    feature: 'progress',
+    eventName: 'progress.delete',
+    action: () async {
+      final deleted = await _progress.deleteEntry(entryId);
+      if (deleted) await _onChanged?.call();
+      return deleted;
+    },
+  );
 }
 
 /// Input from presentation for a new progress event; IDs and ownership stay

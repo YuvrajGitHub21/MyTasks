@@ -60,6 +60,7 @@ The break-end alert should use a scheduled local notification when permission is
 - Validate iOS build and runtime behavior on macOS/Xcode; document any iOS-only limitations.
 - Review privacy notice, local-data/backup behavior, store metadata, required SDK versions, dependency licenses, and support contact before public distribution.
 - Freeze V1 scope and begin the existing M4/M5/M6 Java/backend work only as V2.
+- Provide local diagnostic records with a dedicated encrypted store, seven-day retention, and a strict size bound so support can investigate reports from other devices.
 
 ## 5. Acceptance criteria
 
@@ -70,6 +71,7 @@ The break-end alert should use a scheduled local notification when permission is
 - Break end is communicated when possible, while denied notification permission does not block timing.
 - Task, reminder, and study screens follow a consistent adapted visual system and remain accessible at larger text sizes.
 - Android acceptance is recorded on a real device. iOS acceptance requires a Mac/Xcode build and device or simulator run.
+- Diagnostic records are encrypted separately from task data, contain no task text or IDs, expire after seven days, and remain local until a future explicit export feature is reviewed.
 
 ## 6. Decisions selected for this plan
 
@@ -93,7 +95,8 @@ The implementation should teach Flutter theming and accessibility, state machine
 - **V1-C — Study domain and storage:** Implemented. Drift schema version 5 adds profile-scoped study sessions and break intervals. One active session per profile is enforced in application logic and a partial unique index. Task deletion unlinks a session while retaining its history. Focus seconds are derived from UTC intervals and daily totals use the fixed IST day boundary.
 - **V1-D — Timer and task linking:** Implemented in code. The Study destination supports choosing an open task, creating a task, or starting without a task; offers 10-minute, 20-minute, and 1–240-minute custom breaks; requires explicit resume; and provides stop plus session history. Break-end alerts are ordinary scheduled notifications and require OS notification permission; denied access does not block timing. No always-running background service is used.
 - **Automated verification:** Domain state rules, IST midnight splitting, break exclusion, start/break/resume/stop persistence, profile isolation, task deletion unlinking, schema-upgrade preservation, empty Study UI, and large-text Study UI are covered by Flutter tests. Run `flutter test` from `frontend/`.
-- **Android build/install:** `flutter build apk --debug` completed and the APK was installed with `adb install -r` on the connected M2102J20SI. The `-r` install preserves app data. Android started the app process without a surfaced database/cipher error. The phone remained on its lock screen, so visual and tap-through checks still need the owner to unlock it.
+- **Local diagnostics:** Implemented in code with a separate SQLite3MultipleCiphers ChaCha20-Poly1305 database and independent secure-storage key. The store prunes records older than seven days and is capped at 2 MiB. Task/progress/lifecycle/reminder/study use cases emit stable success and failure events; startup, database-open, Flutter framework, and uncaught platform async failures are also captured. Focused tests cover encryption at rest, readback, pruning, key-loss preservation, queued writes, redaction, error querying, failure isolation, and the storage cap. See [Local-Logging-Design.md](Local-Logging-Design.md) for the review and Android verification record; owner walkthrough and iOS verification remain.
+- **Android build/install:** `flutter build apk --debug` completed and the APK was installed with `adb install -r` on the connected M2102J20SI. The `-r` install preserves app data. Android launched MyTasks and created the private diagnostics database with no Flutter/database/cipher startup error in the inspected logcat window. Visual and task-flow checks remain for the owner.
 - **Still needed for V1-E:** Real-device Android walkthrough of the study flow and existing task/alarm regression checks, screen-reader review of all refreshed screens, and iOS build/runtime validation on macOS with Xcode. Confirm public-release privacy, retention, store metadata, and bundled license disclosures with responsible owners before publishing.
 
 The stored times are UTC instants. The display and daily summaries use Asia/Kolkata. As with any wall-clock stopwatch, a manual device clock change can affect elapsed-time calculations; V1 does not request device-wide usage access or run a persistent study service.

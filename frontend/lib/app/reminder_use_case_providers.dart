@@ -15,6 +15,7 @@ import '../data/notifications/flutter_local_notification_scheduler.dart';
 import '../data/notifications/android_task_alarm_channel.dart';
 import '../domain/services/notification_scheduler.dart';
 import 'reminder_reconciliation_callbacks.dart';
+import 'diagnostic_logger_provider.dart';
 
 /// One clock instance is shared by reminder use cases in this provider scope.
 final reminderClockProvider = Provider<ReminderClock>(
@@ -46,11 +47,13 @@ final saveReminderPreferencesProvider = FutureProvider<SaveReminderPreferences>(
     );
     final profile = await ref.watch(activeProfileProvider.future);
     final clock = ref.watch(reminderClockProvider);
+    final logger = ref.watch(diagnosticLoggerProvider);
     return SaveReminderPreferences(
       repository: preferences,
       profileId: profile.id,
       clock: clock,
       afterSaved: () => reconcileRemindersAfterChange(ref, profile.id),
+      logger: logger,
     );
   },
 );
@@ -81,9 +84,11 @@ final reconcileRemindersProvider = FutureProvider<ReconcileReminders>((
     calculateDesiredRemindersProvider.future,
   );
   final scheduler = await ref.watch(notificationSchedulerProvider.future);
+  final logger = ref.watch(diagnosticLoggerProvider);
   return ReconcileReminders(
     calculateDesired: calculateDesired,
     scheduler: scheduler,
+    logger: logger,
   );
 });
 
@@ -93,9 +98,11 @@ final importSnoozedRemindersProvider = FutureProvider<ImportSnoozedReminders>((
 ) async {
   final scheduled = await ref.watch(scheduledReminderRepositoryProvider.future);
   final snoozed = await ref.watch(snoozedReminderRepositoryProvider.future);
+  final logger = ref.watch(diagnosticLoggerProvider);
   return ImportSnoozedReminders(
     eventSource: AndroidTaskAlarmChannel(),
     scheduledRepository: scheduled,
     snoozedRepository: snoozed,
+    logger: logger,
   );
 });
