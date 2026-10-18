@@ -2,7 +2,7 @@
 ///
 /// This is separate from notification permission: Android may allow the app
 /// to show notifications while still blocking exact-time alarm scheduling.
-enum AlarmPermissionStatus { allowed, notAllowed, unsupported }
+enum AlarmPermissionStatus { allowed, notAllowed, notDetermined, unsupported }
 
 /// Application-owned boundary for exact-alarm access.
 ///
@@ -11,7 +11,9 @@ enum AlarmPermissionStatus { allowed, notAllowed, unsupported }
 abstract interface class AlarmPermissionGateway {
   Future<AlarmPermissionStatus> getStatus();
 
-  /// Opens Android's special access screen after the app explains why it needs
-  /// exact alarm timing. The user must grant access in system settings.
+  /// Requests platform alarm authorization after an in-app explanation.
   Future<AlarmPermissionStatus> requestAccess();
+
+  /// Opens this app's system settings after authorization has been denied.
+  Future<void> openSettings();
 }

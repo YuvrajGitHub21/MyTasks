@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'alarm_permission_provider.dart';
 import '../application/reminders/calculate_desired_reminders.dart';
+import '../application/reminders/import_snoozed_reminders.dart';
 import '../application/reminders/reconcile_reminders.dart';
 import '../application/reminders/reminder_clock.dart';
 import '../application/reminders/save_reminder_preferences.dart';
@@ -11,6 +12,7 @@ import '../data/local/progress_repository_provider.dart';
 import '../data/local/reminder_repository_providers.dart';
 import '../data/local/task_repository_provider.dart';
 import '../data/notifications/flutter_local_notification_scheduler.dart';
+import '../data/notifications/android_task_alarm_channel.dart';
 import '../domain/services/notification_scheduler.dart';
 import 'reminder_reconciliation_callbacks.dart';
 
@@ -82,5 +84,18 @@ final reconcileRemindersProvider = FutureProvider<ReconcileReminders>((
   return ReconcileReminders(
     calculateDesired: calculateDesired,
     scheduler: scheduler,
+  );
+});
+
+/// Imports native snoozes before the OS schedule is reconciled.
+final importSnoozedRemindersProvider = FutureProvider<ImportSnoozedReminders>((
+  ref,
+) async {
+  final scheduled = await ref.watch(scheduledReminderRepositoryProvider.future);
+  final snoozed = await ref.watch(snoozedReminderRepositoryProvider.future);
+  return ImportSnoozedReminders(
+    eventSource: AndroidTaskAlarmChannel(),
+    scheduledRepository: scheduled,
+    snoozedRepository: snoozed,
   );
 });

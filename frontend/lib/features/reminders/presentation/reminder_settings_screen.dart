@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,6 +44,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isIos = defaultTargetPlatform == TargetPlatform.iOS;
     final permission = ref.watch(notificationPermissionStatusProvider);
     final alarmPermission = ref.watch(alarmPermissionStatusProvider);
     final preferences = ref.watch(reminderSettingsPreferencesProvider);
@@ -255,7 +257,9 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Exact alarm access (Android)',
+                    isIos
+                        ? 'AlarmKit access (iOS 26+)'
+                        : 'Exact alarm access (Android)',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -268,28 +272,60 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                       icon: Icons.help_outline,
                       message: 'Could not read exact-alarm access status.',
                     ),
-                    data: (status) => _PermissionStatusMessage(
-                      icon: switch (status) {
-                        AlarmPermissionStatus.allowed =>
-                          Icons.check_circle_outline,
-                        AlarmPermissionStatus.notAllowed =>
-                          Icons.alarm_off_outlined,
-                        AlarmPermissionStatus.unsupported =>
-                          Icons.phone_android_outlined,
-                      },
-                      message: switch (status) {
-                        AlarmPermissionStatus.allowed =>
-                          'Android allows exact alarm scheduling. Notification '
-                              'permission is also needed to show an alert.',
-                        AlarmPermissionStatus.notAllowed =>
-                          'Exact-time alarms are not allowed. You can grant '
-                              'access in Android settings; reminders remain '
-                              'unavailable as alarms until then.',
-                        AlarmPermissionStatus.unsupported =>
-                          'Exact alarm access is currently supported only on '
-                              'Android. iOS alarm support is a separate '
-                              'implementation.',
-                      },
+                    data: (status) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _PermissionStatusMessage(
+                          icon: switch (status) {
+                            AlarmPermissionStatus.allowed =>
+                              Icons.check_circle_outline,
+                            AlarmPermissionStatus.notAllowed =>
+                              Icons.alarm_off_outlined,
+                            AlarmPermissionStatus.notDetermined =>
+                              Icons.alarm_outlined,
+                            AlarmPermissionStatus.unsupported =>
+                              Icons.phone_android_outlined,
+                          },
+                          message: switch (status) {
+                            AlarmPermissionStatus.allowed =>
+                              isIos
+                                  ? 'AlarmKit can schedule MyTasks alarms. '
+                                        'Ordinary notification permission is '
+                                        'separate.'
+                                  : 'Android allows exact alarm scheduling. '
+                                        'Notification permission is also needed '
+                                        'to show an alert.',
+                            AlarmPermissionStatus.notAllowed =>
+                              isIos
+                                  ? 'AlarmKit access is denied. Enable alarms for '
+                                        'MyTasks in iOS Settings; the app will use '
+                                        'standard notifications only if you opted in.'
+                                  : 'Exact-time alarms are not allowed. You can '
+                                        'grant access in Android settings; reminders '
+                                        'remain unavailable as alarms until then.',
+                            AlarmPermissionStatus.notDetermined =>
+                              'Alarm access has not been requested yet. Continue '
+                                  'to let the operating system ask you.',
+                            AlarmPermissionStatus.unsupported =>
+                              isIos
+                                  ? 'AlarmKit requires iOS 26 or later. Standard '
+                                        'notifications are available only if you '
+                                        'opted in to the fallback.'
+                                  : 'Exact alarm access is supported on Android '
+                                        'and iOS 26 or later.',
+                          },
+                        ),
+                        if (isIos && status == AlarmPermissionStatus.notAllowed)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: () =>
+                                  _openAlarmSystemSettings(context),
+                              icon: const Icon(Icons.settings_outlined),
+                              label: const Text('Open iOS Settings'),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -298,7 +334,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                         ? null
                         : () => _explainAndRequestAlarmAccess(context),
                     icon: const Icon(Icons.alarm_add_outlined),
-                    label: const Text('Allow exact alarms'),
+                    label: Text(isIos ? 'Allow alarms' : 'Allow exact alarms'),
                   ),
                 ],
               ),
@@ -519,16 +555,25 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
   }
 
   Future<void> _explainAndRequestAlarmAccess(BuildContext context) async {
+    final isIos = defaultTargetPlatform == TargetPlatform.iOS;
     final shouldContinue = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Allow exact-time alarms?'),
-        content: const Text(
-          'MyTasks needs Android exact-alarm access to trigger an alarm at '
-          'your chosen time, including while the phone is idle. Android will '
-          'open a system settings page where you can allow or decline access. '
-          'This permission alone does not enable notification display or '
-          'guarantee delivery on every device.',
+        title: Text(
+          isIos ? 'Allow MyTasks alarms?' : 'Allow exact-time alarms?',
+        ),
+        content: Text(
+          isIos
+              ? 'MyTasks uses AlarmKit to schedule the alarms you configure. '
+                    'Apple will ask whether MyTasks may schedule alarms. '
+                    'Alarm authorization is separate from ordinary notification '
+                    'permission and can be changed in iOS Settings.'
+              : 'MyTasks needs Android exact-alarm access to trigger an alarm '
+                    'at your chosen time, including while the phone is idle. '
+                    'Android will open a system settings page where you can '
+                    'allow or decline access. This permission alone does not '
+                    'enable notification display or guarantee delivery on '
+                    'every device.',
         ),
         actions: [
           TextButton(
@@ -537,7 +582,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Continue to settings'),
+            child: Text(isIos ? 'Continue' : 'Continue to settings'),
           ),
         ],
       ),
@@ -551,6 +596,17 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open exact-alarm settings.')),
+      );
+    }
+  }
+
+  Future<void> _openAlarmSystemSettings(BuildContext context) async {
+    try {
+      await ref.read(alarmPermissionGatewayProvider).openSettings();
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open iOS Settings.')),
       );
     }
   }

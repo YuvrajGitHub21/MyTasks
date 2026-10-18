@@ -176,6 +176,7 @@ internal object TaskAlarmScheduler {
     private fun openAppPendingIntent(context: Context, record: AlarmRecord): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(EXTRA_ALARM_ID, record.id)
             putExtra(EXTRA_PAYLOAD, record.payload)
         }
         return PendingIntent.getActivity(

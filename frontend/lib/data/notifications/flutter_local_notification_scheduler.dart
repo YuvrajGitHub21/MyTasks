@@ -12,6 +12,7 @@ import '../../domain/repositories/scheduled_reminder_repository.dart';
 import '../../domain/services/alarm_permission_gateway.dart';
 import '../../domain/services/notification_scheduler.dart';
 import 'android_task_alarm_channel.dart';
+import 'ios_alarm_kit_channel.dart';
 
 /// OS notification adapter backed by flutter_local_notifications.
 ///
@@ -24,8 +25,10 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
     required this._preferencesRepository,
     required this._alarmPermissionGateway,
     AndroidTaskAlarmChannel? alarmChannel,
+    IosAlarmKitChannel? iosAlarmChannel,
     TargetPlatform? platform,
   }) : _alarmChannel = alarmChannel ?? AndroidTaskAlarmChannel(),
+       _iosAlarmChannel = iosAlarmChannel ?? IosAlarmKitChannel(),
        _platform = platform ?? defaultTargetPlatform;
 
   static const _channelId = 'task_reminders';
@@ -36,6 +39,7 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
   final ReminderPreferencesRepository _preferencesRepository;
   final AlarmPermissionGateway _alarmPermissionGateway;
   final AndroidTaskAlarmChannel _alarmChannel;
+  final IosAlarmKitChannel _iosAlarmChannel;
   final TargetPlatform _platform;
 
   @override
@@ -90,8 +94,9 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
       (record) =>
           record.request.contentKind != ReminderContentKind.dailySummary,
     );
-    final exactAlarmAllowed =
-        _platform == TargetPlatform.android &&
+    final platformAlarmAllowed =
+        (_platform == TargetPlatform.android ||
+            _platform == TargetPlatform.iOS) &&
         hasActionableReminders &&
         await _alarmPermissionGateway.getStatus() ==
             AlarmPermissionStatus.allowed;
@@ -101,7 +106,7 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
       final request = record.request;
       final isActionable =
           request.contentKind != ReminderContentKind.dailySummary;
-      final shouldUseAlarm = isActionable && exactAlarmAllowed;
+      final shouldUseAlarm = isActionable && platformAlarmAllowed;
       final canUseStandardNotification =
           !isActionable || preferences.allowStandardNotificationFallback;
 
@@ -110,16 +115,14 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
         try {
           await _scheduleAlarm(record);
         } catch (_) {
-          // Permission can be revoked between the status check and scheduling.
-          // A regular notification is used only after the user's explicit opt-in.
-          await _alarmChannel.cancel(record.notificationId);
+          // Access can be revoked between the check and scheduling. A regular
+          // notification is used only after the user's explicit opt-in.
+          await _cancelAlarm(record.notificationId);
           if (!preferences.allowStandardNotificationFallback) rethrow;
           await _scheduleNotification(record);
         }
       } else if (canUseStandardNotification) {
-        if (_platform == TargetPlatform.android) {
-          await _alarmChannel.cancel(record.notificationId);
-        }
+        await _cancelAlarm(record.notificationId);
         await _scheduleNotification(record);
       } else {
         await _cancelOnPlatforms(record.notificationId);
@@ -180,19 +183,37 @@ final class FlutterLocalNotificationScheduler implements NotificationScheduler {
   Future<void> _scheduleAlarm(ScheduledReminderRecord record) async {
     final request = record.request;
     final content = _contentFor(request);
-    await _alarmChannel.schedule(
-      id: record.notificationId,
-      scheduledAtUtc: request.scheduledAtUtc,
-      title: content.title,
-      body: content.body,
-      payload: _payloadFor(request),
-    );
+    if (_platform == TargetPlatform.android) {
+      await _alarmChannel.schedule(
+        id: record.notificationId,
+        scheduledAtUtc: request.scheduledAtUtc,
+        title: content.title,
+        body: content.body,
+        payload: _payloadFor(request),
+      );
+    } else if (_platform == TargetPlatform.iOS) {
+      await _iosAlarmChannel.schedule(
+        id: record.notificationId,
+        scheduledAtUtc: request.scheduledAtUtc,
+        title: content.title,
+        body: content.body,
+        payload: _payloadFor(request),
+      );
+    } else {
+      throw UnsupportedError('Alarm scheduling is unavailable on this device.');
+    }
   }
 
   Future<void> _cancelOnPlatforms(int id) async {
     await _plugin.cancel(id: id);
+    await _cancelAlarm(id);
+  }
+
+  Future<void> _cancelAlarm(int id) async {
     if (_platform == TargetPlatform.android) {
       await _alarmChannel.cancel(id);
+    } else if (_platform == TargetPlatform.iOS) {
+      await _iosAlarmChannel.cancel(id);
     }
   }
 

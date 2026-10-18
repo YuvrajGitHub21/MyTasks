@@ -89,6 +89,15 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun captureAlarmPayload(intent: Intent?) {
+        val alarmId = intent?.getIntExtra(TaskAlarmReceiver.EXTRA_ALARM_ID, 0) ?: 0
+        if (alarmId > 0) {
+            // Opening the alarm notification is an explicit user action. Stop
+            // that occurrence before routing to its task screen.
+            startService(Intent(this, TaskAlarmRingingService::class.java).apply {
+                action = TaskAlarmRingingService.ACTION_STOP
+                putExtra(TaskAlarmReceiver.EXTRA_ALARM_ID, alarmId)
+            })
+        }
         val payload = intent?.getStringExtra(TaskAlarmReceiver.EXTRA_PAYLOAD)
         if (payload != null) pendingAlarmPayload = payload
     }

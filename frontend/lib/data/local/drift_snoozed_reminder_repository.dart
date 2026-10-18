@@ -14,10 +14,11 @@ final class DriftSnoozedReminderRepository
 
   @override
   Future<List<SnoozedReminderRecord>> getForProfile(String profileId) async {
-    final rows = await (_database.select(_database.snoozedReminderRecords)
-          ..where((row) => row.profileId.equals(profileId))
-          ..orderBy([(row) => OrderingTerm.asc(row.scheduledAtUtc)]))
-        .get();
+    final rows =
+        await (_database.select(_database.snoozedReminderRecords)
+              ..where((row) => row.profileId.equals(profileId))
+              ..orderBy([(row) => OrderingTerm.asc(row.scheduledAtUtc)]))
+            .get();
     return rows.map(_toDomain).toList(growable: false);
   }
 
@@ -33,23 +34,28 @@ final class DriftSnoozedReminderRepository
     }
 
     await _database.transaction(() async {
-      final parent = await (_database.select(
-        _database.scheduledReminderRequests,
-      )..where((row) => row.identity.equals(record.parentIdentity))).getSingleOrNull();
+      final parent =
+          await (_database.select(_database.scheduledReminderRequests)
+                ..where((row) => row.identity.equals(record.parentIdentity)))
+              .getSingleOrNull();
       if (parent == null || parent.profileId != record.profileId) {
-        throw StateError('Snooze parent reminder does not belong to this profile.');
+        throw StateError(
+          'Snooze parent reminder does not belong to this profile.',
+        );
       }
-      await _database.into(_database.snoozedReminderRecords).insertOnConflictUpdate(
-        db.SnoozedReminderRecordsCompanion.insert(
-          occurrenceId: record.occurrenceId,
-          platformAlarmId: record.platformAlarmId,
-          profileId: record.profileId,
-          parentIdentity: record.parentIdentity,
-          contentKind: record.contentKind.name,
-          scheduledAtUtc: record.scheduledAtUtc.toUtc(),
-          createdAtUtc: record.createdAtUtc.toUtc(),
-        ),
-      );
+      await _database
+          .into(_database.snoozedReminderRecords)
+          .insertOnConflictUpdate(
+            db.SnoozedReminderRecordsCompanion.insert(
+              occurrenceId: record.occurrenceId,
+              platformAlarmId: record.platformAlarmId,
+              profileId: record.profileId,
+              parentIdentity: record.parentIdentity,
+              contentKind: record.contentKind.name,
+              scheduledAtUtc: record.scheduledAtUtc.toUtc(),
+              createdAtUtc: record.createdAtUtc.toUtc(),
+            ),
+          );
     });
   }
 

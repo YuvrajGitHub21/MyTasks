@@ -1,18 +1,30 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
+import '../../domain/entities/pending_snooze_event.dart';
+import '../../domain/services/snoozed_reminder_event_source.dart';
+import 'ios_alarm_kit_channel.dart';
 
 /// Dart side of the Android alarm platform channel implemented in MainActivity.
 ///
 /// Keeping this adapter in the data layer prevents the domain and application
 /// layers from depending on Flutter's MethodChannel API.
-final class AndroidTaskAlarmChannel {
-  AndroidTaskAlarmChannel({MethodChannel? channel})
-    : _channel = channel ?? _defaultChannel;
+final class AndroidTaskAlarmChannel implements SnoozedReminderEventSource {
+  AndroidTaskAlarmChannel({
+    MethodChannel? channel,
+    IosAlarmKitChannel? iosChannel,
+    TargetPlatform? platform,
+  }) : _channel = channel ?? _defaultChannel,
+       _iosChannel = iosChannel ?? IosAlarmKitChannel(),
+       _platform = platform ?? defaultTargetPlatform;
 
   static const _defaultChannel = MethodChannel(
     'com.yuvrajpadhy.mytasks/task_alarm',
   );
 
   final MethodChannel _channel;
+  final IosAlarmKitChannel _iosChannel;
+  final TargetPlatform _platform;
 
   Future<void> schedule({
     required int id,
@@ -34,17 +46,49 @@ final class AndroidTaskAlarmChannel {
   Future<String?> takePendingAlarmPayload() =>
       _channel.invokeMethod<String?>('takePendingAlarmPayload');
 
-  Future<List<AndroidPendingSnooze>> getPendingSnoozes() async {
+  @override
+  Future<List<PendingSnoozeEvent>> getPendingEvents() async {
+    if (_platform == TargetPlatform.iOS) {
+      return _iosChannel.getPendingEvents();
+    }
+    if (_platform != TargetPlatform.android) return const [];
     final values = await _channel.invokeListMethod<Map<Object?, Object?>>(
       'getPendingSnoozes',
     );
-    return (values ?? const [])
-        .map(AndroidPendingSnooze.fromPlatformMap)
-        .toList(growable: false);
+    return (values ?? const []).map(_toPendingEvent).toList(growable: false);
+  }
+
+  @override
+  Future<void> acknowledge(String platformAlarmId) async {
+    if (_platform == TargetPlatform.iOS) {
+      await _iosChannel.acknowledge(platformAlarmId);
+      return;
+    }
+    if (_platform != TargetPlatform.android) return;
+    final id = int.tryParse(platformAlarmId);
+    if (id == null || id <= 0) {
+      throw ArgumentError.value(platformAlarmId, 'platformAlarmId');
+    }
+    await acknowledgeSnooze(id);
   }
 
   Future<void> acknowledgeSnooze(int id) =>
       _channel.invokeMethod<void>('acknowledgeSnooze', {'id': id});
+
+  PendingSnoozeEvent _toPendingEvent(Map<Object?, Object?> map) =>
+      PendingSnoozeEvent(
+        platformAlarmId: (map['id']! as int).toString(),
+        parentPlatformAlarmId: (map['parentAlarmId']! as int).toString(),
+        scheduledAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          map['triggerAtMillis']! as int,
+          isUtc: true,
+        ),
+        createdAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          map['createdAtMillis']! as int,
+          isUtc: true,
+        ),
+        payload: map['payload']! as String,
+      );
 
   void setAlarmOpenedHandler(void Function(String payload) onOpened) {
     _channel.setMethodCallHandler((call) async {
@@ -53,30 +97,4 @@ final class AndroidTaskAlarmChannel {
       }
     });
   }
-}
-
-/// Durable native snooze event waiting to be imported into the encrypted DB.
-final class AndroidPendingSnooze {
-  const AndroidPendingSnooze({
-    required this.id,
-    required this.parentAlarmId,
-    required this.triggerAtMillis,
-    required this.createdAtMillis,
-    required this.payload,
-  });
-
-  factory AndroidPendingSnooze.fromPlatformMap(Map<Object?, Object?> map) =>
-      AndroidPendingSnooze(
-        id: map['id']! as int,
-        parentAlarmId: map['parentAlarmId']! as int,
-        triggerAtMillis: map['triggerAtMillis']! as int,
-        createdAtMillis: map['createdAtMillis']! as int,
-        payload: map['payload']! as String,
-      );
-
-  final int id;
-  final int parentAlarmId;
-  final int triggerAtMillis;
-  final int createdAtMillis;
-  final String payload;
 }

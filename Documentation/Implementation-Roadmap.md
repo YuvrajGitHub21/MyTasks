@@ -87,7 +87,7 @@ Study timer, calendar view, data export, collaboration, recurring tasks, and adv
 
 ### M3 — Reminders, alarms, and platform behavior
 
-**Status: Local-notification prototype implemented; alarm-style behavior is the current approved change and implementation is pending.** See [detailed M3 implementation plan](M3-Implementation-Plan.md).
+**Status: Reminder rules, settings, Android alarm scheduling, snooze persistence, and iOS AlarmKit source are implemented.** Android debug build succeeds. Android device checks and iOS build/runtime verification remain; see [detailed M3 implementation plan](M3-Implementation-Plan.md).
 
 **Goal:** Deliver local, OS-managed alarm-style prompts for actionable reminders and validate behavior on Android and iOS. Standard notifications are an explicit opt-in fallback where alarms are unavailable.
 

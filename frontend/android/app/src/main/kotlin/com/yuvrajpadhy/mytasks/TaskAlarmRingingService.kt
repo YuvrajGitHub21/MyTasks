@@ -21,7 +21,14 @@ class TaskAlarmRingingService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> {
-                stopRinging()
+                val requestedAlarmId = intent.getIntExtra(TaskAlarmReceiver.EXTRA_ALARM_ID, 0)
+                if (requestedAlarmId == activeNotificationId) {
+                    stopRinging()
+                } else if (player == null) {
+                    // A stale Stop action may outlive its ringing service. Do not
+                    // let it stop another alarm that is currently playing.
+                    stopSelf(startId)
+                }
                 return START_NOT_STICKY
             }
             ACTION_SNOOZE -> {
@@ -61,6 +68,7 @@ class TaskAlarmRingingService : Service() {
         val payload = intent.getStringExtra(TaskAlarmReceiver.EXTRA_PAYLOAD).orEmpty()
         val openIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(TaskAlarmReceiver.EXTRA_ALARM_ID, alarmId)
             putExtra(TaskAlarmReceiver.EXTRA_PAYLOAD, payload)
         }
         val openPendingIntent = PendingIntent.getActivity(

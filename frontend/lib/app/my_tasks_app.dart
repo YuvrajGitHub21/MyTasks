@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../data/notifications/android_task_alarm_channel.dart';
 import '../data/notifications/local_notification_initializer.dart';
+import '../data/notifications/ios_alarm_kit_channel.dart';
 import 'app_shell.dart';
 import 'notification_tap_router.dart';
 import 'reminder_reconciliation_observer.dart';
@@ -15,9 +17,10 @@ class MyTasksApp extends StatefulWidget {
   State<MyTasksApp> createState() => _MyTasksAppState();
 }
 
-class _MyTasksAppState extends State<MyTasksApp> {
+class _MyTasksAppState extends State<MyTasksApp> with WidgetsBindingObserver {
   final _notificationTapRouter = NotificationTapRouter();
   final _alarmChannel = AndroidTaskAlarmChannel();
+  final _iosAlarmChannel = IosAlarmKitChannel();
   StreamSubscription<String>? _tapSubscription;
 
   static const _brandGreen = Color(0xFF2E7D32);
@@ -25,6 +28,7 @@ class _MyTasksAppState extends State<MyTasksApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tapSubscription = LocalNotificationInitializer.tapPayloads.listen(
       _notificationTapRouter.handlePayload,
     );
@@ -44,9 +48,18 @@ class _MyTasksAppState extends State<MyTasksApp> {
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_takePendingAlarmPayload());
+    }
+  }
+
   Future<void> _takePendingAlarmPayload() async {
     try {
-      final payload = await _alarmChannel.takePendingAlarmPayload();
+      final payload = defaultTargetPlatform == TargetPlatform.iOS
+          ? await _iosAlarmChannel.takePendingAlarmPayload()
+          : await _alarmChannel.takePendingAlarmPayload();
       if (payload != null) _notificationTapRouter.handlePayload(payload);
     } catch (_) {
       // iOS has a separate AlarmKit adapter; Android-only channel absence must
@@ -56,6 +69,7 @@ class _MyTasksAppState extends State<MyTasksApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_tapSubscription?.cancel());
     super.dispose();
   }

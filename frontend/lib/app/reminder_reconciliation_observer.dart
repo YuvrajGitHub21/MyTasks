@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -62,6 +61,16 @@ class _ReminderReconciliationObserverState
         try {
           final profile = await ref.read(activeProfileProvider.future);
           if (!mounted) return;
+          try {
+            final importSnoozes = await ref.read(
+              importSnoozedRemindersProvider.future,
+            );
+            await importSnoozes(profile.id);
+          } catch (error, stackTrace) {
+            // A platform import failure must not block schedule recovery/tasks.
+            debugPrint('Could not import snoozed reminders: $error');
+            debugPrintStack(stackTrace: stackTrace);
+          }
           final reconcile = await ref.read(reconcileRemindersProvider.future);
           await reconcile(profile.id);
         } catch (error, stackTrace) {
